@@ -1,0 +1,195 @@
+[
+  {
+    "repository": {
+      "full_name": "codecrafters-io/build-your-own-x",
+      "name": "build-your-own-x",
+      "description": "Master programming by recreating your favorite technologies from scratch.",
+      "language": "Markdown",
+      "stars": 517379,
+      "forks": 48957,
+      "open_issues": 506,
+      "url": "https://github.com/codecrafters-io/build-your-own-x",
+      "created_at": "2018-05-09T12:03:18Z",
+      "updated_at": "2026-06-19T18:45:18Z",
+      "topics": [
+        "awesome-list",
+        "free",
+        "programming",
+        "tutorial-code",
+        "tutorial-exercises",
+        "tutorials"
+      ],
+      "license": null
+    },
+    "scan_id": "scan-codecrafters-io-build-your-own-x_1781894976",
+    "quality_score": 100,
+    "tier": "A",
+    "findings_count": 0,
+    "patterns_found": [],
+    "timestamp": "2026-06-19T13:49:39.012570",
+    "scan_duration": 2.18865966796875,
+    "findings_details": []
+  },
+  {
+    "repository": {
+      "full_name": "sindresorhus/awesome",
+      "name": "awesome",
+      "description": "\ud83d\ude0e Awesome lists about all kinds of interesting topics",
+      "language": null,
+      "stars": 477109,
+      "forks": 35469,
+      "open_issues": 84,
+      "url": "https://github.com/sindresorhus/awesome",
+      "created_at": "2014-07-11T13:42:37Z",
+      "updated_at": "2026-06-19T18:49:04Z",
+      "topics": [
+        "awesome",
+        "awesome-list",
+        "lists",
+        "resources",
+        "unicorns"
+      ],
+      "license": {
+        "key": "cc0-1.0",
+        "name": "Creative Commons Zero v1.0 Universal",
+        "spdx_id": "CC0-1.0",
+        "url": "https://api.github.com/licenses/cc0-1.0",
+        "node_id": "MDc6TGljZW5zZTY="
+      }
+    },
+    "scan_id": "scan-sindresorhus-awesome_1781894979",
+    "quality_score": 100,
+    "tier": "A",
+    "findings_count": 0,
+    "patterns_found": [],
+    "timestamp": "2026-06-19T13:49:41.213062",
+    "scan_duration": 2.199526071548462,
+    "findings_details": []
+  },
+  {
+    "repository": {
+      "full_name": "freeCodeCamp/freeCodeCamp",
+      "name": "freeCodeCamp",
+      "description": "freeCodeCamp.org's open-source codebase and curriculum. Learn math, programming, and computer science for free.",
+      "language": "TypeScript",
+      "stars": 449788,
+      "forks": 45161,
+      "open_issues": 167,
+      "url": "https://github.com/freeCodeCamp/freeCodeCamp",
+      "created_at": "2014-12-24T17:49:19Z",
+      "updated_at": "2026-06-19T18:44:30Z",
+      "topics": [
+        "careers",
+        "certification",
+        "community",
+        "curriculum",
+        "d3",
+        "education",
+        "freecodecamp",
+        "javascript",
+        "learn-to-code",
+        "math",
+        "nodejs",
+        "nonprofits",
+        "programming",
+        "react",
+        "teachers"
+      ],
+      "license": {
+        "key": "bsd-3-clause",
+        "name": "BSD 3-Clause \"New\" or \"Revised\" License",
+        "spdx_id": "BSD-3-Clause",
+        "url": "https://api.github.com/licenses/bsd-3-clause",
+        "node_id": "MDc6TGljZW5zZTU="
+      }
+    },
+    "scan_id": "scan-freeCodeCamp-freeCodeCamp_1781894981",
+    "quality_score": 100,
+    "tier": "A",
+    "findings_count": 0,
+    "patterns_found": [],
+    "timestamp": "2026-06-19T13:49:43.464525",
+    "scan_duration": 2.250997543334961,
+    "findings_details": []
+  },
+  {
+    "repository": {
+      "full_name": "public-apis/public-apis",
+      "name": "public-apis",
+      "description": "A collective list of free APIs",
+      "language": "Python",
+      "stars": 442836,
+      "forks": 48523,
+      "open_issues": 1430,
+      "url": "https://github.com/public-apis/public-apis",
+      "created_at": "2016-03-20T23:49:42Z",
+      "updated_at": "2026-06-19T18:45:27Z",
+      "topics": [
+        "api",
+        "apis",
+        "dataset",
+        "development",
+        "free",
+        "list",
+        "lists",
+        "open-source",
+        "public",
+        "public-api",
+        "public-apis",
+        "resources",
+        "software"
+      ],
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      }
+    },
+    "scan_id": "scan-public-apis-public-apis_1781894983",
+    "quality_score": 100,
+    "tier": "A",
+    "findings_count": 0,
+    "patterns_found": [],
+    "timestamp": "2026-06-19T13:49:45.651929",
+    "scan_duration": 2.1868016719818115,
+    "findings_details": []
+  },
+  {
+    "repository": {
+      "full_name": "EbookFoundation/free-programming-books",
+      "name": "free-programming-books",
+      "description": ":books: Freely available programming books",
+      "language": "Python",
+      "stars": 390514,
+      "forks": 66440,
+      "open_issues": 78,
+      "url": "https://github.com/EbookFoundation/free-programming-books",
+      "created_at": "2013-10-11T06:50:37Z",
+      "updated_at": "2026-06-19T18:47:40Z",
+      "topics": [
+        "books",
+        "education",
+        "hacktoberfest",
+        "list",
+        "resource"
+      ],
+      "license": {
+        "key": "cc-by-4.0",
+        "name": "Creative Commons Attribution 4.0 International",
+        "spdx_id": "CC-BY-4.0",
+        "url": "https://api.github.com/licenses/cc-by-4.0",
+        "node_id": "MDc6TGljZW5zZTI1"
+      }
+    },
+    "scan_id": "scan-EbookFoundation-free-programming-books_1781894985",
+    "quality_score": 100,
+    "tier": "A",
+    "findings_count": 0,
+    "patterns_found": [],
+    "timestamp": "2026-06-19T13:49:47.863123",
+    "scan_duration": 2.2105977535247803,
+    "findings_details": []
+  }
+]
