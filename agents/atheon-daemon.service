@@ -1,0 +1,35 @@
+[Unit]
+Description=Atheon GitHub Scanner Daemon
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mkinney
+Group=mkinney
+WorkingDirectory=/nas/Temp/repos/Atheon-GitHub-Scanner/agents
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="LOG_LEVEL=INFO"
+ExecStart=/usr/bin/python3 daemon_runner.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/nas/Temp/repos/Atheon-GitHub-Scanner
+ReadWritePaths=/nas/Temp/repos/Atheon-Enhanced
+ReadWritePaths=/nas/Temp/repos/Atheon-Benchmark
+ReadWritePaths=/tmp
+
+# Resource limits
+MemoryMax=2G
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target
