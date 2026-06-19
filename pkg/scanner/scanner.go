@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aliasfoxkde/Atheon-GitHub-Scanner/pkg/database"
 	"github.com/aliasfoxkde/Atheon-GitHub-Scanner/pkg/github"
 	"github.com/aliasfoxkde/Atheon-GitHub-Scanner/pkg/patterns"
 )
@@ -17,6 +18,7 @@ import (
 type Scanner struct {
 	githubClient   *github.Client
 	patternScanner *patterns.Scanner
+	database       interface{}
 	ctx            context.Context
 	workDir        string
 }
@@ -67,6 +69,11 @@ func NewScanner(ctx context.Context, githubToken string) (*Scanner, error) {
 		ctx:            ctx,
 		workDir:        workDir,
 	}, nil
+}
+
+// SetDatabase sets the database for the scanner
+func (s *Scanner) SetDatabase(db *database.Database) {
+	s.database = db
 }
 
 // ScanRepository scans a single repository
