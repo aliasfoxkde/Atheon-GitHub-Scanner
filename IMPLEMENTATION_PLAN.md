@@ -5,7 +5,7 @@
 ### Core Components
 - Scanner CLI structure
 - GitHub API client
-- Atheon integration layer
+- **Athena integration layer** - Integration with [Atheon](https://github.com/HoraDomu/Atheon) pattern matching engine
 - Basic report generation
 - Database schema design
 

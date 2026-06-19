@@ -6,6 +6,8 @@ Automated GitHub repository scanning and quality analysis system using Atheon pa
 
 Atheon-GitHub-Scanner is an automated system that scans GitHub repositories using the Atheon pattern matching engine to generate comprehensive quality reports. The system focuses on public repositories with significant traction and provides detailed analysis across multiple dimensions.
 
+**This project uses patterns and concepts from the [Atheon](https://github.com/HoraDomu/Atheon) project by HoraDomu.** Atheon is a powerful pattern matching engine for security and code quality analysis. This scanner extends Atheon's capabilities to automate large-scale GitHub repository scanning and analysis.
+
 ## Core Features
 
 - **Automated Scanning**: Daily background scanning of GitHub repositories
@@ -151,6 +153,12 @@ This project is part of the Atheon ecosystem. Contributions should follow the sa
 - Professional documentation
 - No AI attribution or special characters
 - Conventional commit format
+
+## Acknowledgments
+
+- **[Atheon](https://github.com/HoraDomu/Atheon)** - Core pattern matching engine and security analysis framework by HoraDomu
+- **GitHub** - Repository hosting and API services
+- All contributors to the scanned repositories that make this analysis possible
 
 ## License
 
