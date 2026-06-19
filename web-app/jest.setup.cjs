@@ -31,3 +31,15 @@ global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
 };
+
+// Mock import.meta.env
+global.importMetaEnvMock = {
+  VITE_API_URL: 'http://localhost:8000',
+  VITE_ENABLE_ANALYTICS: 'false',
+  VITE_ENABLE_OFFLINE_SUPPORT: 'false',
+  VITE_ENABLE_MOCK_DATA: 'false',
+  VITE_APP_NAME: 'Atheon GitHub Scanner',
+  VITE_APP_VERSION: '1.0.0',
+  VITE_APP_DESCRIPTION: 'Automated GitHub repository scanning and quality analysis',
+  VITE_DATA_SOURCE: 'REAL_SCANNER_DATA'
+};
