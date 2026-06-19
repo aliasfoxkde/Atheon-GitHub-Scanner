@@ -1,0 +1,4 @@
+2026-06-19 14:17:46,186 - __main__ - INFO - 🚀 Starting Automated Deployment
+2026-06-19 14:17:46,187 - __main__ - INFO - Collecting enhancements ready for deployment...
+2026-06-19 14:17:46,187 - __main__ - ERROR - Failed to collect ready enhancements: 'NoneType' object has no attribute 'get'
+2026-06-19 14:17:46,187 - __main__ - INFO - No enhancements ready for deployment
