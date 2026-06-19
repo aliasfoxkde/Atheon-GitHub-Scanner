@@ -15,10 +15,10 @@ import (
 
 // Scanner represents the main repository scanner
 type Scanner struct {
-	githubClient *github.Client
+	githubClient   *github.Client
 	patternScanner *patterns.Scanner
-	ctx           context.Context
-	workDir       string
+	ctx            context.Context
+	workDir        string
 }
 
 // ScanResult represents the complete scan result for a repository
@@ -47,10 +47,10 @@ type ScanSummary struct {
 
 // CodeQuality represents code quality metrics
 type CodeQuality struct {
-	TestCoverage      float64 `json:"test_coverage"`
-	DocumentationPct  float64 `json:"documentation_percentage"`
-	ComplexityScore   float64 `json:"complexity_score"`
-	TechnicalDebt     int     `json:"technical_debt"`
+	TestCoverage         float64 `json:"test_coverage"`
+	DocumentationPct     float64 `json:"documentation_percentage"`
+	ComplexityScore      float64 `json:"complexity_score"`
+	TechnicalDebt        int     `json:"technical_debt"`
 	MaintainabilityIndex float64 `json:"maintainability_index"`
 }
 
@@ -64,8 +64,8 @@ func NewScanner(ctx context.Context, githubToken string) (*Scanner, error) {
 	return &Scanner{
 		githubClient:   github.NewClient(githubToken),
 		patternScanner: patterns.NewScanner(ctx),
-		ctx:           ctx,
-		workDir:       workDir,
+		ctx:            ctx,
+		workDir:        workDir,
 	}, nil
 }
 
@@ -141,10 +141,10 @@ func (s *Scanner) cloneRepository(repo *github.Repository) (string, error) {
 func (s *Scanner) calculateCodeQuality(repoPath, primaryLanguage string) CodeQuality {
 	// Default metrics
 	metrics := CodeQuality{
-		TestCoverage:      0.0,
-		DocumentationPct:  0.0,
-		ComplexityScore:   50.0, // Medium complexity as baseline
-		TechnicalDebt:     0,
+		TestCoverage:         0.0,
+		DocumentationPct:     0.0,
+		ComplexityScore:      50.0, // Medium complexity as baseline
+		TechnicalDebt:        0,
 		MaintainabilityIndex: 70.0, // Baseline maintainability
 	}
 
@@ -188,19 +188,19 @@ func (s *Scanner) calculateCodeQuality(repoPath, primaryLanguage string) CodeQua
 // isSourceFile checks if a file is a source file
 func (s *Scanner) isSourceFile(ext string) bool {
 	sourceExts := map[string]bool{
-		".go":   true,
-		".py":   true,
-		".js":   true,
-		".ts":   true,
-		".java": true,
-		".rb":   true,
-		".php":  true,
-		".cs":   true,
-		".cpp":  true,
-		".c":    true,
-		".h":    true,
-		".rs":   true,
-		".kt":   true,
+		".go":    true,
+		".py":    true,
+		".js":    true,
+		".ts":    true,
+		".java":  true,
+		".rb":    true,
+		".php":   true,
+		".cs":    true,
+		".cpp":   true,
+		".c":     true,
+		".h":     true,
+		".rs":    true,
+		".kt":    true,
 		".swift": true,
 	}
 	return sourceExts[ext]
@@ -209,12 +209,12 @@ func (s *Scanner) isSourceFile(ext string) bool {
 // createSummary creates a high-level summary of the scan results
 func (s *Scanner) createSummary(findings []patterns.Finding, statistics map[string]int, qualityMetrics CodeQuality, repoPath string) ScanSummary {
 	summary := ScanSummary{
-		TotalFindings:    len(findings),
-		CriticalFindings: statistics["critical"],
-		HighFindings:     statistics["high"],
-		MediumFindings:   statistics["medium"],
-		LowFindings:      statistics["low"],
-		Categories:       make(map[string]int),
+		TotalFindings:      len(findings),
+		CriticalFindings:   statistics["critical"],
+		HighFindings:       statistics["high"],
+		MediumFindings:     statistics["medium"],
+		LowFindings:        statistics["low"],
+		Categories:         make(map[string]int),
 		CodeQualityMetrics: qualityMetrics,
 	}
 
@@ -241,8 +241,8 @@ func (s *Scanner) calculateQualityScore(summary ScanSummary, repo *github.Reposi
 	// Deduct points for findings (weighted by severity with diminishing returns for large projects)
 	// Use logarithmic scaling for large numbers of findings
 	criticalPenalty := min(summary.CriticalFindings*25, 50) // Cap at 50 points
-	highPenalty := min(summary.HighFindings*10, 30)        // Cap at 30 points
-	mediumPenalty := min(summary.MediumFindings*3, 20)     // Cap at 20 points
+	highPenalty := min(summary.HighFindings*10, 30)         // Cap at 30 points
+	mediumPenalty := min(summary.MediumFindings*3, 20)      // Cap at 20 points
 	lowPenalty := min(summary.LowFindings/10, 10)           // Scale down low findings significantly
 
 	score -= criticalPenalty

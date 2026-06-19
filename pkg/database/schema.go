@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -434,22 +433,22 @@ func (d *Database) Close() error {
 
 // Data types
 type Repository struct {
-	ID              string
-	Owner           string
-	Name            string
-	FullName        string
-	Description     string
-	Language        string
-	Stars           int
-	Forks           int
-	OpenIssues      int
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DefaultBranch   string
-	Topics          []string
-	License         *License
-	TopicsJSON      []byte
-	LicenseJSON     []byte
+	ID            string
+	Owner         string
+	Name          string
+	FullName      string
+	Description   string
+	Language      string
+	Stars         int
+	Forks         int
+	OpenIssues    int
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DefaultBranch string
+	Topics        []string
+	License       *License
+	TopicsJSON    []byte
+	LicenseJSON   []byte
 }
 
 type License struct {
@@ -460,20 +459,20 @@ type License struct {
 }
 
 type Analysis struct {
-	ID                 string
-	RepoID             string
-	QualityScore       int
-	Tier               string
-	TotalFindings      int
-	CriticalFindings   int
-	HighFindings       int
-	MediumFindings     int
-	LowFindings        int
-	ScanDate           time.Time
+	ID                  string
+	RepoID              string
+	QualityScore        int
+	Tier                string
+	TotalFindings       int
+	CriticalFindings    int
+	HighFindings        int
+	MediumFindings      int
+	LowFindings         int
+	ScanDate            time.Time
 	ScanDurationSeconds float64
-	Status             string
-	Findings           []Finding
-	QualityMetrics     QualityMetrics
+	Status              string
+	Findings            []Finding
+	QualityMetrics      QualityMetrics
 }
 
 type Finding struct {
@@ -491,26 +490,26 @@ type Finding struct {
 }
 
 type QualityMetrics struct {
-	ID                    string
-	TestCoverage          float64
+	ID                      string
+	TestCoverage            float64
 	DocumentationPercentage float64
-	ComplexityScore       float64
-	TechnicalDebt         int
-	MaintainabilityIndex  float64
-	FilesScanned          int
-	LanguagesDetected     []string
+	ComplexityScore         float64
+	TechnicalDebt           int
+	MaintainabilityIndex    float64
+	FilesScanned            int
+	LanguagesDetected       []string
 }
 
 type QualityHistory struct {
-	QualityScore int
-	Tier         string
+	QualityScore  int
+	Tier          string
 	TotalFindings int
-	RecordedAt   time.Time
+	RecordedAt    time.Time
 }
 
 type SearchFilters struct {
-	Language  string
-	MinStars  int
-	Category  string
-	Limit     int
+	Language string
+	MinStars int
+	Category string
+	Limit    int
 }

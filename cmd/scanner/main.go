@@ -119,14 +119,14 @@ func handleScanCommand(ctx context.Context, repoFlag *string, trendingFlag *bool
 		if *categoryFlag != "" {
 			// Scan specific category
 			categoryMap := map[string][]string{
-				"web-framework":  scanner.GetPopularRepositories().WebFrameworks,
-				"cli-tool":       scanner.GetPopularRepositories().CLITools,
-				"library":        scanner.GetPopularRepositories().Libraries,
-				"database":       scanner.GetPopularRepositories().Databases,
-				"testing":        scanner.GetPopularRepositories().Testing,
-				"devops":         scanner.GetPopularRepositories().DevOps,
-				"ml-ai":          scanner.GetPopularRepositories().ML_AI,
-				"documentation":  scanner.GetPopularRepositories().Documentation,
+				"web-framework": scanner.GetPopularRepositories().WebFrameworks,
+				"cli-tool":      scanner.GetPopularRepositories().CLITools,
+				"library":       scanner.GetPopularRepositories().Libraries,
+				"database":      scanner.GetPopularRepositories().Databases,
+				"testing":       scanner.GetPopularRepositories().Testing,
+				"devops":        scanner.GetPopularRepositories().DevOps,
+				"ml-ai":         scanner.GetPopularRepositories().ML_AI,
+				"documentation": scanner.GetPopularRepositories().Documentation,
 			}
 
 			if repos, exists := categoryMap[*categoryFlag]; exists {

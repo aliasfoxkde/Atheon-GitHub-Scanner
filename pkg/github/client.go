@@ -32,23 +32,23 @@ type RateLimit struct {
 
 // Repository represents GitHub repository information
 type Repository struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	FullName    string    `json:"full_name"`
-	Owner       Owner     `json:"owner"`
-	Description string    `json:"description"`
-	Language    string    `json:"language"`
-	Stars       int       `json:"stargazers_count"`
-	Forks       int       `json:"forks_count"`
-	OpenIssues  int       `json:"open_issues_count"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	PushedAt    time.Time `json:"pushed_at"`
-	Size        int       `json:"size"`
-	Topics      []string  `json:"topics"`
-	License     *License  `json:"license"`
-	CloneURL    string    `json:"clone_url"`
-	DefaultBranch string `json:"default_branch"`
+	ID            int64     `json:"id"`
+	Name          string    `json:"name"`
+	FullName      string    `json:"full_name"`
+	Owner         Owner     `json:"owner"`
+	Description   string    `json:"description"`
+	Language      string    `json:"language"`
+	Stars         int       `json:"stargazers_count"`
+	Forks         int       `json:"forks_count"`
+	OpenIssues    int       `json:"open_issues_count"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	PushedAt      time.Time `json:"pushed_at"`
+	Size          int       `json:"size"`
+	Topics        []string  `json:"topics"`
+	License       *License  `json:"license"`
+	CloneURL      string    `json:"clone_url"`
+	DefaultBranch string    `json:"default_branch"`
 }
 
 // Owner represents repository owner information
@@ -73,9 +73,9 @@ func NewClient(token string) *Client {
 		httpClient: &http.Client{
 			Timeout: 60 * time.Second,
 			Transport: &http.Transport{
-				MaxIdleConns:        10,
-				IdleConnTimeout:     30 * time.Second,
-				DisableCompression:  false,
+				MaxIdleConns:       10,
+				IdleConnTimeout:    30 * time.Second,
+				DisableCompression: false,
 			},
 		},
 		token:     token,

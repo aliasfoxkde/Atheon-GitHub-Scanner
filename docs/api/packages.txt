@@ -1,0 +1,120 @@
+package database // import "github.com/aliasfoxkde/Atheon-GitHub-Scanner/pkg/database"
+
+
+TYPES
+
+type Analysis struct {
+	ID                  string
+	RepoID              string
+	QualityScore        int
+	Tier                string
+	TotalFindings       int
+	CriticalFindings    int
+	HighFindings        int
+	MediumFindings      int
+	LowFindings         int
+	ScanDate            time.Time
+	ScanDurationSeconds float64
+	Status              string
+	Findings            []Finding
+	QualityMetrics      QualityMetrics
+}
+
+type Database struct {
+	// Has unexported fields.
+}
+    Database represents the database connection
+
+func NewDatabase(connection string) (*Database, error)
+    NewDatabase creates a new database connection
+
+func (d *Database) Close() error
+    Close closes the database connection
+
+func (d *Database) GetAnalysesByRepository(repoID string, limit int) ([]Analysis, error)
+    GetAnalysesByRepository retrieves all analyses for a repository
+
+func (d *Database) GetQualityTrends(repoID string, days int) ([]QualityHistory, error)
+    GetQualityTrends retrieves quality trends for a repository
+
+func (d *Database) GetRepositoryByName(fullName string) (*Repository, error)
+    GetRepositoryByName retrieves a repository by full name
+
+func (d *Database) InitSchema() error
+    InitSchema creates the database schema if it doesn't exist
+
+func (d *Database) SearchRepositories(filters SearchFilters) ([]Repository, error)
+    SearchRepositories searches repositories with filters
+
+func (d *Database) StoreAnalysis(analysis Analysis) error
+    StoreAnalysis stores analysis results in the database
+
+func (d *Database) StoreRepository(repo Repository) error
+    StoreRepository stores or updates a repository in the database
+
+type Finding struct {
+	ID           string
+	Type         string
+	Severity     string
+	Category     string
+	FilePath     string
+	LineNumber   int
+	ColumnNumber int
+	Description  string
+	MatchText    string
+	CWE          string
+	OWASP        string
+}
+
+type License struct {
+	Key    string
+	Name   string
+	SPDXID string
+	URL    string
+}
+
+type QualityHistory struct {
+	QualityScore  int
+	Tier          string
+	TotalFindings int
+	RecordedAt    time.Time
+}
+
+type QualityMetrics struct {
+	ID                      string
+	TestCoverage            float64
+	DocumentationPercentage float64
+	ComplexityScore         float64
+	TechnicalDebt           int
+	MaintainabilityIndex    float64
+	FilesScanned            int
+	LanguagesDetected       []string
+}
+
+type Repository struct {
+	ID            string
+	Owner         string
+	Name          string
+	FullName      string
+	Description   string
+	Language      string
+	Stars         int
+	Forks         int
+	OpenIssues    int
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DefaultBranch string
+	Topics        []string
+	License       *License
+	TopicsJSON    []byte
+	LicenseJSON   []byte
+}
+    Data types
+
+type SearchFilters struct {
+	Language string
+	MinStars int
+	Category string
+	Limit    int
+}
+

@@ -206,10 +206,10 @@ func (g *Generator) writeQualityMetrics(builder *strings.Builder, result *scanne
 	builder.WriteString("| Component | Impact | Score |\n")
 	builder.WriteString("|-----------|--------|-------|\n")
 	builder.WriteString(fmt.Sprintf("| Security Issues | -%d | %s |\n",
-		result.Summary.CriticalFindings*25 + result.Summary.HighFindings*15,
+		result.Summary.CriticalFindings*25+result.Summary.HighFindings*15,
 		g.getScoreComponent("security", result)))
 	builder.WriteString(fmt.Sprintf("| Code Quality | -%d | %s |\n",
-		result.Summary.MediumFindings*5 + result.Summary.LowFindings,
+		result.Summary.MediumFindings*5+result.Summary.LowFindings,
 		g.getScoreComponent("quality", result)))
 	builder.WriteString(fmt.Sprintf("| Test Coverage | +%d | Good |\n",
 		int(result.Summary.CodeQualityMetrics.TestCoverage/10)))

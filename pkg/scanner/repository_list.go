@@ -6,14 +6,14 @@ import (
 
 // RepositoryList contains curated lists of repositories by category and language
 type RepositoryList struct {
-	WebFrameworks   []string
-	CLITools        []string
-	Libraries       []string
-	Databases       []string
-	Testing         []string
-	DevOps          []string
-	ML_AI           []string
-	Documentation   []string
+	WebFrameworks []string
+	CLITools      []string
+	Libraries     []string
+	Databases     []string
+	Testing       []string
+	DevOps        []string
+	ML_AI         []string
+	Documentation []string
 }
 
 // GetPopularRepositories returns a curated list of popular repositories by category
@@ -242,14 +242,14 @@ func containsLanguage(repo, language string) bool {
 	// Simple heuristic based on repo owner/name
 	knownMappings := map[string][]string{
 		"javascript": {"react", "vue", "angular", "next", "nuxt", "express", "axios", "lodash", "d3", "three"},
-		"typescript":  {"angular", "vue", "astro", "nestjs", "nestjs"},
-		"python":      {"python", "django", "flask", "pytest", "tensorflow", "pytorch", "keras", "scikit"},
-		"go":          {"golang", "go", "kubernetes", "docker", "prometheus", "grafana", "terraform"},
-		"rust":        {"rust", "tokio", "actix", "yew"},
-		"java":        {"spring", "apache", "jetbrains", "java"},
-		"ruby":        {"rails", "ruby", "jekyll", "chef", "puppet"},
-		"php":         {"laravel", "symfony", "php"},
-		"c++":         {"cpp", "mongodb", "redis", "postgresql", "mysql"},
+		"typescript": {"angular", "vue", "astro", "nestjs", "nestjs"},
+		"python":     {"python", "django", "flask", "pytest", "tensorflow", "pytorch", "keras", "scikit"},
+		"go":         {"golang", "go", "kubernetes", "docker", "prometheus", "grafana", "terraform"},
+		"rust":       {"rust", "tokio", "actix", "yew"},
+		"java":       {"spring", "apache", "jetbrains", "java"},
+		"ruby":       {"rails", "ruby", "jekyll", "chef", "puppet"},
+		"php":        {"laravel", "symfony", "php"},
+		"c++":        {"cpp", "mongodb", "redis", "postgresql", "mysql"},
 	}
 
 	for lang, repos := range knownMappings {

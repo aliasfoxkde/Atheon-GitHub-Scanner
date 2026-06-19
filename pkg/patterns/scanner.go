@@ -12,25 +12,25 @@ import (
 
 // Finding represents a pattern match found in the code
 type Finding struct {
-	Type        string   `json:"type"`
-	Severity    string   `json:"severity"`
-	File        string   `json:"file"`
-	Line        int      `json:"line"`
-	Column      int      `json:"column"`
-	Description string   `json:"description"`
-	Match       string   `json:"match"`
-	Category    string   `json:"category"`
-	CWE         string   `json:"cwe,omitempty"`
-	OWASP       string   `json:"owasp,omitempty"`
+	Type        string `json:"type"`
+	Severity    string `json:"severity"`
+	File        string `json:"file"`
+	Line        int    `json:"line"`
+	Column      int    `json:"column"`
+	Description string `json:"description"`
+	Match       string `json:"match"`
+	Category    string `json:"category"`
+	CWE         string `json:"cwe,omitempty"`
+	OWASP       string `json:"owasp,omitempty"`
 }
 
 // Scanner represents the pattern scanning engine
 type Scanner struct {
-	patterns  map[string][]Pattern
-	ctx       context.Context
-	maxFiles  int
-	mu        sync.Mutex
-	findings  []Finding
+	patterns map[string][]Pattern
+	ctx      context.Context
+	maxFiles int
+	mu       sync.Mutex
+	findings []Finding
 }
 
 // Pattern represents a security or quality pattern to match
@@ -252,33 +252,33 @@ func (s *Scanner) ScanDirectory(rootPath string) ([]Finding, error) {
 // shouldScanFile checks if a file should be scanned based on its extension
 func (s *Scanner) shouldScanFile(ext string) bool {
 	scanableExtensions := map[string]bool{
-		".go":   true,
-		".py":   true,
-		".js":   true,
-		".ts":   true,
-		".jsx":  true,
-		".tsx":  true,
-		".java": true,
-		".rb":   true,
-		".php":  true,
-		".cs":   true,
-		".cpp":  true,
-		".c":    true,
-		".h":    true,
-		".rs":   true,
-		".kt":   true,
+		".go":    true,
+		".py":    true,
+		".js":    true,
+		".ts":    true,
+		".jsx":   true,
+		".tsx":   true,
+		".java":  true,
+		".rb":    true,
+		".php":   true,
+		".cs":    true,
+		".cpp":   true,
+		".c":     true,
+		".h":     true,
+		".rs":    true,
+		".kt":    true,
 		".swift": true,
-		".sh":   true,
-		".yml":  true,
-		".yaml": true,
-		".json": true,
-		".xml":  true,
-		".html": true,
-		".css":  true,
-		".scss": true,
-		".less": true,
-		".md":   true,
-		".txt":  true,
+		".sh":    true,
+		".yml":   true,
+		".yaml":  true,
+		".json":  true,
+		".xml":   true,
+		".html":  true,
+		".css":   true,
+		".scss":  true,
+		".less":  true,
+		".md":    true,
+		".txt":   true,
 	}
 	return scanableExtensions[ext]
 }
