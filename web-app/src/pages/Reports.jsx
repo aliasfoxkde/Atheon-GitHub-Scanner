@@ -4,6 +4,7 @@ import { mockReports, filterReports, simulateApiCall } from '../services/mockDat
 import ReportDetailModal from '../components/ReportDetailModal'
 import SpiderChart from '../components/Charts'
 import { BarChart, DonutChart } from '../components/Charts'
+import FilterableTable from '../components/FilterableTable'
 
 export default function Reports() {
   const [selectedReport, setSelectedReport] = useState(null)
@@ -263,80 +264,93 @@ export default function Reports() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
       ) : (
-        <div className="bg-gray-800 rounded-lg border border-gray-700">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-700">
-              <thead className="bg-gray-900">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Repository
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Stars
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Quality
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Tier
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Findings
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {reports.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-white">{report.repo_name}</div>
-                      <div className="text-sm text-gray-400">{report.language}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                      {report.category}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                      {report.stars?.toLocaleString() || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`text-lg font-bold ${getScoreColor(report.quality_score)}`}>
-                        {report.quality_score}/100
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTierColor(report.tier)}`}>
-                        {report.tier}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                      {report.total_findings}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => {
-                          setSelectedReport(report)
-                          setShowModal(true)
-                        }}
-                        className="text-blue-400 hover:text-blue-300 mr-3"
-                      >
-                        View
-                      </button>
-                      <button className="text-gray-400 hover:text-white">
-                        Download
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <FilterableTable
+          data={reports}
+          columns={[
+            {
+              key: 'repo_name',
+              label: 'Repository',
+              render: (value, row) => (
+                <div>
+                  <div className="text-sm font-medium text-white">{value}</div>
+                  <div className="text-sm text-gray-400">{row.language}</div>
+                </div>
+              )
+            },
+            {
+              key: 'category',
+              label: 'Category',
+              type: 'badge',
+              badgeClass: (value) => {
+                const classes = {
+                  'web-framework': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                  'cli-tool': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+                  'ml-ai': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                  'database': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                  'testing': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                  'devops': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300'
+                }
+                return classes[value] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+              }
+            },
+            {
+              key: 'stars',
+              label: 'Stars',
+              type: 'number'
+            },
+            {
+              key: 'quality_score',
+              label: 'Quality Score',
+              render: (value) => (
+                <span className={`text-lg font-bold ${getScoreColor(value)}`}>
+                  {value}/100
+                </span>
+              )
+            },
+            {
+              key: 'tier',
+              label: 'Tier',
+              type: 'badge',
+              badgeClass: (value) => {
+                const classes = {
+                  'A': 'bg-green-500 text-white',
+                  'B': 'bg-blue-500 text-white',
+                  'C': 'bg-yellow-500 text-white',
+                  'D': 'bg-orange-500 text-white',
+                  'F': 'bg-red-500 text-white'
+                }
+                return classes[value] || 'bg-gray-500 text-white'
+              }
+            },
+            {
+              key: 'total_findings',
+              label: 'Findings',
+              type: 'number'
+            },
+            {
+              key: 'actions',
+              label: 'Actions',
+              render: (value, row) => (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      setSelectedReport(row)
+                      setShowModal(true)
+                    }}
+                    className="text-blue-400 hover:text-blue-300"
+                  >
+                    View
+                  </button>
+                  <button className="text-gray-400 hover:text-white">
+                    Download
+                  </button>
+                </div>
+              )
+            }
+          ]}
+          title="Repository Reports"
+          pageSize={20}
+        />
       )}
 
       {/* Report Detail Modal */}

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 export default function Trending() {
   const [trendingRepos, setTrendingRepos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasRealData, setHasRealData] = useState(false);
   const [filters, setFilters] = useState({
     language: '',
     since: 'weekly',
@@ -10,18 +11,30 @@ export default function Trending() {
   });
 
   useEffect(() => {
-    fetchTrendingRepos();
-  }, [filters]);
+    // Check if we have real data
+    checkForRealData();
+  }, []);
 
-  const fetchTrendingRepos = async () => {
+  const checkForRealData = async () => {
     try {
-      setLoading(true);
+      // Try to fetch real data
       const params = new URLSearchParams(filters);
       const response = await fetch(`/api/trending?${params}`);
-      const data = await response.json();
-      setTrendingRepos(data.repositories || []);
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.repositories && data.repositories.length > 0) {
+          setTrendingRepos(data.repositories);
+          setHasRealData(true);
+        } else {
+          setHasRealData(false);
+        }
+      } else {
+        setHasRealData(false);
+      }
     } catch (error) {
-      console.error('Failed to fetch trending repos:', error);
+      console.log('No real trending data available:', error);
+      setHasRealData(false);
     } finally {
       setLoading(false);
     }
@@ -133,8 +146,9 @@ export default function Trending() {
       </div>
 
       {/* Trending Repositories */}
-      <div className="space-y-4">
-        {trendingRepos.map((repo, index) => (
+      {hasRealData && (
+        <div className="space-y-4">
+          {trendingRepos.map((repo, index) => (
           <div key={repo.id} className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -194,9 +208,35 @@ export default function Trending() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
-      {trendingRepos.length === 0 && (
+      {!hasRealData && trendingRepos.length === 0 && (
+        <div className="bg-gray-800 rounded-lg p-8 border border-gray-700 text-center">
+          <svg className="w-16 h-16 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+          <h3 className="text-xl font-semibold text-white mb-2">No Trending Data Available</h3>
+          <p className="text-gray-400 mb-4">
+            The Atheon GitHub Scanner has not yet performed any repository scans.
+          </p>
+          <div className="bg-gray-900 rounded-lg p-4 text-left max-w-2xl mx-auto">
+            <h4 className="text-sm font-semibold text-white mb-2">🔍 System Status:</h4>
+            <ul className="text-sm text-gray-400 space-y-1">
+              <li>✅ Scanning framework implemented</li>
+              <li>✅ Quality gates operational</li>
+              <li>✅ Vulnerability detection ready</li>
+              <li>❌ No actual repository scans performed</li>
+              <li>❌ No real trending data available</li>
+            </ul>
+            <p className="text-xs text-gray-500 mt-4">
+              Trending data will appear after performing actual GitHub repository scans.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {hasRealData && trendingRepos.length === 0 && (
         <div className="text-center py-12 text-gray-400">
           <svg className="w-16 h-16 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
