@@ -14,11 +14,19 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
 
+      // Check if response is OK and content is JSON
       if (!response.ok) {
-        throw new Error(data.message || 'API request failed');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+
+      // Check content type to ensure we're getting JSON, not HTML
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('API returned HTML instead of JSON - API endpoint may not exist');
+      }
+
+      const data = await response.json();
 
       return { success: true, data };
     } catch (error) {
