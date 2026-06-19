@@ -1,10 +1,10 @@
-name = "atheon-scanner"
+name = "atheon-github-scanner"
 compatibility_date = "2024-01-01"
+
+# Cloudflare Pages configuration
+pages_build_output_dir = "web-app/dist"
 
 [vars]
 ENVIRONMENT = "production"
 GITHUB_TOKEN = ""
 DATABASE_URL = ""
-
-# Cloudflare Pages configuration
-pages_build_output_dir = "dist"
