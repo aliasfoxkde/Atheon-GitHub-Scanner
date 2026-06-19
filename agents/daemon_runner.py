@@ -524,6 +524,19 @@ class AtheonDaemon:
             logger.info("Step 6: Committing improvements")
             self.commit_improvements(pattern_results, scan_results)
 
+            # Step 7: Update webapp with latest data
+            logger.info("Step 7: Updating webapp data and deploying")
+            try:
+                from update_webapp_data import WebappUpdater
+                webapp_updater = WebappUpdater()
+                webapp_update_success = webapp_updater.update_and_deploy()
+                if webapp_update_success:
+                    logger.info("Webapp updated and deployed successfully")
+                else:
+                    logger.warning("Webapp update failed - continuing cycle")
+            except Exception as e:
+                logger.warning(f"Webapp update error (non-critical): {e}")
+
             # Update status
             cycle_duration = (datetime.now() - cycle_start).total_seconds()
             self.repo_manager.status['scan_count'] += 1
