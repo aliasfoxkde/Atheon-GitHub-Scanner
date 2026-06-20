@@ -1,0 +1,9 @@
+# Cloudflare Pages redirects
+# Prevent SPA fallback from intercepting static data files
+/embedded-data.json    /embedded-data.json    200
+/sw.js                 /sw.js                 200
+/manifest.webmanifest  /manifest.webmanifest  200
+/registerSW.js         /registerSW.js         200
+
+# SPA fallback for everything else
+/*                     /index.html            200
