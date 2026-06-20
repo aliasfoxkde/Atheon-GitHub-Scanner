@@ -41,7 +41,7 @@ export default function Reports() {
   useEffect(() => {
     fetchReports()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, pagination.page, pagination.perPage])
+  }, [filters, pagination.page, pagination.perPage, settings.defaultPageSize])
 
   // Load available filter options from real data
   useEffect(() => {
@@ -52,6 +52,11 @@ export default function Reports() {
       setAvailableTiers(tiers.length ? tiers : ['A', 'B', 'C', 'D', 'F'])
     }).catch(() => {})
   }, [])
+
+  // Sync defaultPageSize changes into pagination
+  useEffect(() => {
+    setPagination((p) => ({ ...p, perPage: settings.defaultPageSize, page: 1 }))
+  }, [settings.defaultPageSize])
 
   const fetchReports = async () => {
     try {
@@ -101,7 +106,7 @@ export default function Reports() {
     return [...reports].sort((a, b) => {
       const av = a[column]
       const bv = b[column]
-      if (column === 'tier') return (TIER_ORDER[av] || 9) - (TIER_ORDER[bv] || 9) ? mult * ((TIER_ORDER[av] || 9) - (TIER_ORDER[bv] || 9)) : 0
+      if (column === 'tier') return mult * ((TIER_ORDER[av] || 9) - (TIER_ORDER[bv] || 9))
       if (typeof av === 'number' && typeof bv === 'number') return mult * (av - bv)
       return mult * String(av || '').localeCompare(String(bv || ''))
     })
