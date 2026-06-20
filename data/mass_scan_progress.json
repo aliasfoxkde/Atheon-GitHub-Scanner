@@ -1,6 +1,6 @@
 {
   "total_target": 5000,
-  "repositories_scanned": 760,
+  "repositories_scanned": 800,
   "batch_number": 8,
   "start_time": "2026-06-19T14:33:28.002274",
   "repositories_per_language": {
@@ -11,7 +11,7 @@
     "Go": 100,
     "C++": 100,
     "Ruby": 100,
-    "PHP": 8
+    "PHP": 48
   },
   "errors": [],
   "finders": [

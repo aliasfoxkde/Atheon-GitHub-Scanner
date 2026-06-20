@@ -298,14 +298,15 @@ class UltraFastPythonScanner:
 
         logger.info(f"🎯 Found {len(packages)} Python packages to scan")
 
-        # Use process pool for maximum parallelism
+        # Use thread pool for I/O-bound operations (fixes threading.Lock pickling issue)
         num_workers = multiprocessing.cpu_count()
         logger.info(f"⚡ Using {num_workers} parallel workers for Python packages")
 
         all_results = []
 
-        # Scan in parallel
-        with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        # Scan in parallel using ThreadPoolExecutor instead of ProcessPoolExecutor
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
             futures = {
                 executor.submit(self.download_and_scan_package, pkg, i % num_workers): (pkg, i)
                 for i, pkg in enumerate(packages)

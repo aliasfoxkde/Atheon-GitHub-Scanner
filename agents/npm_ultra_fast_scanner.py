@@ -240,7 +240,17 @@ class UltraFastNpmScanner:
 
         if not packages:
             logger.error("No packages found")
-            return {}
+            return {
+                'scan_type': 'npm_ultra_fast',
+                'timestamp': datetime.now().strftime("%Y%m%d_%H%M%S"),
+                'packages_scanned': 0,
+                'scan_method': 'parallel_npm_install',
+                'workers_used': 0,
+                'total_dependencies': 0,
+                'total_files': 0,
+                'packages_with_github': 0,
+                'error': 'No packages found from npm registry'
+            }
 
         logger.info(f"🎯 Found {len(packages)} packages to scan")
 
@@ -308,11 +318,11 @@ def main():
     summary = scanner.run_ultra_fast_scan(target_count=args.count)
 
     print(f"\n📊 ULTRA-FAST SCAN RESULTS:")
-    print(f"Packages Scanned: {summary['packages_scanned']}")
+    print(f"Packages Scanned: {summary.get('packages_scanned', 0)}")
     print(f"Workers Used: {summary.get('workers_used', 'N/A')}")
-    print(f"Total Dependencies: {summary['total_dependencies']}")
-    print(f"Total Files: {summary['total_files']}")
-    print(f"Packages with GitHub Info: {summary['packages_with_github']}")
+    print(f"Total Dependencies: {summary.get('total_dependencies', 0)}")
+    print(f"Total Files: {summary.get('total_files', 0)}")
+    print(f"Packages with GitHub Info: {summary.get('packages_with_github', 0)}")
 
 if __name__ == "__main__":
     main()
