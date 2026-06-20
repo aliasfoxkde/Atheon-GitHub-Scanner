@@ -243,11 +243,11 @@ export default function SecurityRadarChart({ securityData, totalRepos, size = 40
   };
 
   const getValueColor = (value) => {
-    if (value >= 80) return '#ef4444'; // high severity - red
-    if (value >= 60) return '#f97316'; // medium-high - orange
-    if (value >= 40) return '#f59e0b'; // medium - yellow
-    if (value >= 20) return '#eab308'; // low-medium - yellow-green
-    return '#22c55e'; // low - green
+    if (value >= 80) return '#ef4444'; // High risk
+    if (value >= 60) return '#f97316'; // Medium-high risk
+    if (value >= 40) return '#f59e0b'; // Medium risk
+    if (value >= 20) return '#eab308'; // Medium-low risk
+    return '#22c55e'; // Low risk
   };
 
   const getSeverityColor = (severity) => {
