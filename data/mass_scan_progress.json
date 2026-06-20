@@ -1,7 +1,7 @@
 {
   "total_target": 5000,
-  "repositories_scanned": 850,
-  "batch_number": 8,
+  "repositories_scanned": 2000,
+  "batch_number": 19,
   "start_time": "2026-06-19T14:33:28.002274",
   "repositories_per_language": {
     "JavaScript": 250,
@@ -9,7 +9,17 @@
     "TypeScript": 148,
     "Java": 100,
     "Go": 100,
-    "C++": 50
+    "C++": 100,
+    "Ruby": 100,
+    "PHP": 100,
+    "Swift": 100,
+    "Kotlin": 100,
+    "Rust": 100,
+    "C": 100,
+    "Shell": 100,
+    "HTML": 100,
+    "CSS": 100,
+    "Jupyter Notebook": 100
   },
   "errors": [],
   "finders": [

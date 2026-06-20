@@ -129,10 +129,15 @@ class ApiService {
     }
     if (endpoint.startsWith('/api/ecosystems')) {
       const ecosystem_comparison = {};
+      // Build per-language avg from top_languages array (real computed scores)
+      const langScores = {};
+      for (const entry of data.top_languages || []) {
+        if (entry.language) langScores[entry.language] = entry.avgScore || entry.average_quality_score;
+      }
       for (const [lang, count] of Object.entries(data.language_distribution || {})) {
         ecosystem_comparison[lang] = {
           repository_count: count,
-          average_quality_score: data.average_quality_score,
+          average_quality_score: langScores[lang] ?? data.quality_stats?.average ?? 0,
         };
       }
       return {

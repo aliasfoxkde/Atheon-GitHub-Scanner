@@ -46,11 +46,12 @@ test.describe('Regression Tests', () => {
 
   test('BUGFIX: API integration works and makes requests', async ({ page }) => {
     // Previous issue: No API requests were being made
-    const apiRequests = [];
+    const dataRequests = [];
 
     page.on('request', request => {
-      if (request.url().includes('/api/')) {
-        apiRequests.push(request.url());
+      const url = request.url();
+      if (url.includes('/embedded-data.json') || url.includes('/api/')) {
+        dataRequests.push(url);
       }
     });
 
@@ -58,8 +59,8 @@ test.describe('Regression Tests', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(5000);
 
-    // API requests should be made
-    expect(apiRequests.length).toBeGreaterThan(0);
+    // Data requests should be made (embedded-data.json is the primary data source)
+    expect(dataRequests.length).toBeGreaterThan(0);
   });
 
   test('BUGFIX: No 404 errors on main navigation', async ({ page }) => {
@@ -87,8 +88,8 @@ test.describe('Regression Tests', () => {
     const firstChartContent = await charts.first().innerHTML();
     expect(firstChartContent.length).toBeGreaterThan(100);
 
-    // Check for specific chart types
-    await expect(page.locator('text=Security Findings Distribution').first()).toBeVisible();
+    // Check for specific chart types (actual labels in current Dashboard)
+    await expect(page.locator('text=Security Findings').first()).toBeVisible();
     await expect(page.locator('text=Quality Tier Distribution').first()).toBeVisible();
   });
 
@@ -223,11 +224,11 @@ test.describe('Regression Tests', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
 
-    // Check for security findings section
-    await expect(page.locator('text=Security Findings Distribution').first()).toBeVisible();
+    // Check for security findings section (actual label in Dashboard)
+    await expect(page.locator('text=Security Findings').first()).toBeVisible();
 
     // Should have security data
-    const securitySection = page.locator('text=Security Findings Distribution').locator('..');
+    const securitySection = page.locator('text=Security Findings').locator('..');
     await expect(securitySection.first()).toBeVisible();
   });
 

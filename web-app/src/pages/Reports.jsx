@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import apiService from '../services/api'
-import { getAllRepositories } from '../services/realScannerData'
+import { getAllRepositories, loadRealScannerData } from '../services/realScannerData'
 import ReportDetailModal from '../components/ReportDetailModal'
 import CompareModal from '../components/CompareModal'
 import { SkeletonTable } from '../components/Skeleton'
@@ -23,6 +22,8 @@ export default function Reports() {
   const toast = useToast()
   const { settings } = useSettings()
 
+  const [availableLanguages, setAvailableLanguages] = useState([])
+  const [availableTiers, setAvailableTiers] = useState(['A', 'B', 'C', 'D', 'F'])
   const [filters, setFilters] = useState({
     language: searchParams.get('language') || '',
     tier: searchParams.get('tier') || '',
@@ -41,6 +42,16 @@ export default function Reports() {
     fetchReports()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, pagination.page, pagination.perPage])
+
+  // Load available filter options from real data
+  useEffect(() => {
+    loadRealScannerData().then((data) => {
+      const langs = Object.keys(data.language_distribution || {}).sort()
+      setAvailableLanguages(langs)
+      const tiers = Object.keys(data.tier_distribution || {}).sort((a, b) => TIER_ORDER[a] - TIER_ORDER[b])
+      setAvailableTiers(tiers.length ? tiers : ['A', 'B', 'C', 'D', 'F'])
+    }).catch(() => {})
+  }, [])
 
   const fetchReports = async () => {
     try {
@@ -95,6 +106,11 @@ export default function Reports() {
       return mult * String(av || '').localeCompare(String(bv || ''))
     })
   }, [reports, sort])
+
+  // Compute table column count based on active settings
+  const tableColCount = useMemo(() => {
+    return 5 + (settings.showStars !== false ? 1 : 0) + (settings.showDeps !== false ? 1 : 0) + (settings.showFiles !== false ? 1 : 0)
+  }, [settings.showStars, settings.showDeps, settings.showFiles])
 
   const handleSort = (column) => {
     setSort((s) => s.column === column ? { column, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { column, dir: 'asc' })
@@ -209,7 +225,7 @@ export default function Reports() {
               className="w-full bg-gray-700 text-white rounded px-3 py-2 border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
             >
               <option value="">All</option>
-              {['JavaScript', 'TypeScript', 'Python', 'Go', 'Java', 'Ruby', 'Rust', 'C++', 'PHP'].map((l) => (
+              {availableLanguages.map((l) => (
                 <option key={l} value={l}>{l}</option>
               ))}
             </select>
@@ -222,7 +238,7 @@ export default function Reports() {
               className="w-full bg-gray-700 text-white rounded px-3 py-2 border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
             >
               <option value="">All</option>
-              {['A', 'B', 'C', 'D', 'F'].map((t) => (
+              {availableTiers.map((t) => (
                 <option key={t} value={t}>Tier {t}</option>
               ))}
             </select>
@@ -281,9 +297,9 @@ export default function Reports() {
                   { k: 'language', l: 'Language' },
                   { k: 'quality_score', l: 'Score' },
                   { k: 'tier', l: 'Tier' },
-                  { k: 'stars', l: 'Stars' },
-                  { k: 'total_dependencies', l: 'Deps' },
-                  { k: 'total_files', l: 'Files' },
+                  ...(settings.showStars !== false ? [{ k: 'stars', l: 'Stars' }] : []),
+                  ...(settings.showDeps !== false ? [{ k: 'total_dependencies', l: 'Deps' }] : []),
+                  ...(settings.showFiles !== false ? [{ k: 'total_files', l: 'Files' }] : []),
                 ].map((c) => (
                   <th
                     key={c.k}
@@ -303,7 +319,7 @@ export default function Reports() {
             <tbody>
               {sortedReports.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={tableColCount + 1} className="px-4 py-8 text-center text-gray-400">
                     No repositories match your filters
                   </td>
                 </tr>
@@ -313,7 +329,7 @@ export default function Reports() {
                   return (
                     <tr
                       key={report.id}
-                      className={`border-t border-gray-700 hover:bg-gray-700/50 transition-colors ${isSelected ? 'bg-purple-900/20' : ''}`}
+                      className={`border-t border-gray-700 hover:bg-gray-700/50 transition-colors ${isSelected ? 'bg-purple-900/20' : ''} ${settings.density === 'compact' ? 'py-1' : ''}`}
                     >
                       <td className="px-3 py-3">
                         <input
@@ -341,15 +357,21 @@ export default function Reports() {
                           {report.tier}
                         </span>
                       </td>
-                      <td onClick={() => handleReportClick(report)} className="px-3 py-3 text-gray-300 text-sm cursor-pointer">
-                        {report.stars > 0 ? (report.stars >= 1000 ? `${(report.stars / 1000).toFixed(1)}k` : report.stars) : '—'}
-                      </td>
-                      <td onClick={() => handleReportClick(report)} className="px-3 py-3 text-gray-300 text-sm cursor-pointer">
-                        {report.total_dependencies > 0 ? report.total_dependencies : '—'}
-                      </td>
-                      <td onClick={() => handleReportClick(report)} className="px-3 py-3 text-gray-300 text-sm cursor-pointer">
-                        {report.total_files > 0 ? report.total_files.toLocaleString() : '—'}
-                      </td>
+                      {settings.showStars !== false && (
+                        <td onClick={() => handleReportClick(report)} className="px-3 py-3 text-gray-300 text-sm cursor-pointer">
+                          {report.stars > 0 ? (report.stars >= 1000 ? `${(report.stars / 1000).toFixed(1)}k` : report.stars) : '—'}
+                        </td>
+                      )}
+                      {settings.showDeps !== false && (
+                        <td onClick={() => handleReportClick(report)} className="px-3 py-3 text-gray-300 text-sm cursor-pointer">
+                          {report.total_dependencies > 0 ? report.total_dependencies : '—'}
+                        </td>
+                      )}
+                      {settings.showFiles !== false && (
+                        <td onClick={() => handleReportClick(report)} className="px-3 py-3 text-gray-300 text-sm cursor-pointer">
+                          {report.total_files > 0 ? report.total_files.toLocaleString() : '—'}
+                        </td>
+                      )}
                     </tr>
                   )
                 })
@@ -387,7 +409,11 @@ export default function Reports() {
       )}
 
       {showModal && selectedReport && (
-        <ReportDetailModal report={selectedReport} onClose={() => setShowModal(false)} />
+        <ReportDetailModal
+          report={selectedReport}
+          onClose={() => setShowModal(false)}
+          onCompare={(r) => toggleCompareSelection(r.id)}
+        />
       )}
       {showCompare && (
         <CompareModal ids={selectedForCompare} onClose={() => setShowCompare(false)} />

@@ -61,17 +61,23 @@ export const getAllRepositories = async (page = 1, limit = 50, language = null, 
 };
 
 /**
- * Get ecosystem data from embedded data
+ * Get ecosystem data from embedded data — uses real per-language average scores
  */
 export const getEcosystemData = async () => {
   const data = await loadRealScannerData();
   const languages = data.language_distribution || {};
 
+  // Build per-language avg from top_languages array (real computed scores)
+  const langScores = {};
+  for (const entry of data.top_languages || []) {
+    if (entry.language) langScores[entry.language] = entry.avgScore || entry.average_quality_score;
+  }
+
   const ecosystem_comparison = {};
   for (const [lang, count] of Object.entries(languages)) {
     ecosystem_comparison[lang] = {
       repository_count: count,
-      average_quality_score: data.average_quality_score || 99.5,
+      average_quality_score: langScores[lang] ?? data.quality_stats?.average ?? 0,
     };
   }
 

@@ -38,6 +38,7 @@ export default function ThemeToggle() {
 
   return (
     <button
+      id="theme-toggle-btn"
       onClick={toggleTheme}
       className="relative group p-2 rounded-lg bg-gray-800 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 border border-gray-700 dark:border-gray-600 transition-all duration-200"
       title={`Current: ${getThemeLabel()} - Click to cycle themes`}

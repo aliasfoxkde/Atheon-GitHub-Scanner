@@ -1,13 +1,13 @@
 {
-  "audit_timestamp": "2026-06-19T13:52:40.782861",
+  "audit_timestamp": "2026-06-20T06:00:13.161927",
   "system_status": {
     "scan_data_exists": true,
-    "actual_repos_scanned": 15,
+    "actual_repos_scanned": 10,
     "data_sources_verified": true,
     "audit_trail_exists": false
   },
   "quality_gate_result": null,
-  "honest_assessment": "\u2705 SYSTEM HONESTY CHECK: 15 repositories have been verified as actually scanned.",
+  "honest_assessment": "\u2705 SYSTEM HONESTY CHECK: 10 repositories have been verified as actually scanned.",
   "recommendations": [
     "HIGH: Implement audit trail for all operations",
     "HIGH: Add quality enforcement to automation pipeline"

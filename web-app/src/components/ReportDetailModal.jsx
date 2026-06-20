@@ -31,16 +31,17 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
   const scanMethod = report.scan_method || 'unknown';
 
   // All findings + metrics live in legacy detail records; treat as optional.
-  const findings = report.findings || [];
-  const metrics = report.metrics || null;
-  const securityCounts = {
+  const findings = report.findings || report.security_issues || [];
+  const metrics = report.metrics || report.quality_metrics || null;
+  // Use real security_counts from embedded data, fallback to legacy fields
+  const securityCounts = report.security_counts || {
     critical: report.critical_findings || 0,
     high: report.high_findings || 0,
     medium: report.medium_findings || 0,
     low: report.low_findings || 0,
   };
-  const totalFindings = report.total_findings
-    || securityCounts.critical + securityCounts.high + securityCounts.medium + securityCounts.low;
+  const totalFindings = report.total_findings || report.findings_count
+    || (securityCounts.critical + securityCounts.high + securityCounts.medium + securityCounts.low);
 
   // Open-on-GitHub link if name is in owner/repo form
   const looksLikeRepo = typeof name === 'string' && /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(name);
@@ -291,10 +292,10 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                   <h3 className="text-lg font-semibold text-white mb-4">Severity Distribution</h3>
                   <div className="space-y-4">
                     {[
-                      { label: 'Critical', count: securityCounts.critical, color: 'red' },
-                      { label: 'High', count: securityCounts.high, color: 'orange' },
-                      { label: 'Medium', count: securityCounts.medium, color: 'yellow' },
-                      { label: 'Low', count: securityCounts.low, color: 'blue' },
+                      { label: 'Critical', count: securityCounts.critical, colorClass: 'bg-red-500' },
+                      { label: 'High', count: securityCounts.high, colorClass: 'bg-orange-500' },
+                      { label: 'Medium', count: securityCounts.medium, colorClass: 'bg-yellow-500' },
+                      { label: 'Low', count: securityCounts.low, colorClass: 'bg-blue-500' },
                     ].map((item) => (
                       <div key={item.label}>
                         <div className="flex justify-between mb-1">
@@ -303,7 +304,7 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-2">
                           <div
-                            className={`bg-${item.color}-500 h-2 rounded-full transition-all duration-300`}
+                            className={`${item.colorClass} h-2 rounded-full transition-all duration-300`}
                             style={{ width: `${totalFindings ? Math.min((item.count / totalFindings) * 100, 100) : 0}%` }}
                           />
                         </div>
@@ -318,8 +319,56 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
           {activeTab === 'details' && (
             <div className="space-y-4">
               <div className="bg-gray-900 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-white mb-4">Technical Details</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Repository Details</h3>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  {report.clone_url && (
+                    <div>
+                      <dt className="text-gray-400">Clone URL</dt>
+                      <dd className="text-white text-xs break-all">{report.clone_url}</dd>
+                    </div>
+                  )}
+                  {report.homepage && (
+                    <div>
+                      <dt className="text-gray-400">Homepage</dt>
+                      <dd className="text-white text-xs break-all">{report.homepage}</dd>
+                    </div>
+                  )}
+                  {report.license && (
+                    <div>
+                      <dt className="text-gray-400">License</dt>
+                      <dd className="text-white">{report.license}</dd>
+                    </div>
+                  )}
+                  {report.default_branch && (
+                    <div>
+                      <dt className="text-gray-400">Default Branch</dt>
+                      <dd className="text-white">{report.default_branch}</dd>
+                    </div>
+                  )}
+                  {report.forks > 0 && (
+                    <div>
+                      <dt className="text-gray-400">Forks</dt>
+                      <dd className="text-white">{report.forks.toLocaleString()}</dd>
+                    </div>
+                  )}
+                  {report.open_issues > 0 && (
+                    <div>
+                      <dt className="text-gray-400">Open Issues</dt>
+                      <dd className="text-white">{report.open_issues.toLocaleString()}</dd>
+                    </div>
+                  )}
+                  {report.total_dependencies > 0 && (
+                    <div>
+                      <dt className="text-gray-400">Dependencies</dt>
+                      <dd className="text-white">{report.total_dependencies.toLocaleString()}</dd>
+                    </div>
+                  )}
+                  {report.total_files > 0 && (
+                    <div>
+                      <dt className="text-gray-400">Files Analyzed</dt>
+                      <dd className="text-white">{report.total_files.toLocaleString()}</dd>
+                    </div>
+                  )}
                   <div>
                     <dt className="text-gray-400">Report ID</dt>
                     <dd className="text-white font-mono text-xs break-all">{id}</dd>
@@ -338,6 +387,17 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                   </div>
                 </dl>
               </div>
+
+              {report.topics && report.topics.length > 0 && (
+                <div className="bg-gray-900 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-white mb-3">Topics</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {report.topics.map((topic, i) => (
+                      <span key={i} className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">{topic}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {githubUrl && (
                 <div className="bg-gray-900 rounded-lg p-4">

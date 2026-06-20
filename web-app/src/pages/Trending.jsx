@@ -41,6 +41,22 @@ export default function Trending() {
     let list = [...allRepos];
     if (filters.language) list = list.filter((r) => r.language === filters.language);
     list = list.filter((r) => r.stars > 0);
+
+    // Filter by time period based on scan_date
+    if (filters.since) {
+      const now = new Date();
+      const cutoff = new Date();
+      if (filters.since === 'daily') cutoff.setDate(now.getDate() - 1);
+      else if (filters.since === 'weekly') cutoff.setDate(now.getDate() - 7);
+      else if (filters.since === 'monthly') cutoff.setMonth(now.getMonth() - 1);
+
+      list = list.filter((r) => {
+        if (!r.scan_date) return false;
+        const scanDate = new Date(r.scan_date);
+        return !isNaN(scanDate.getTime()) && scanDate >= cutoff;
+      });
+    }
+
     list.sort((a, b) => b.stars - a.stars);
     return list.slice(0, filters.limit);
   }, [allRepos, filters]);

@@ -1,6 +1,7 @@
 /**
  * Unit Tests - Testing individual functions and components in isolation
  */
+import { test, expect } from '@playwright/test';
 
 // Mock data for testing
 const mockStats = {

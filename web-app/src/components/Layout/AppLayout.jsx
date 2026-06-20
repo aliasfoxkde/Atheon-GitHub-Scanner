@@ -182,9 +182,10 @@ const AppLayout = ({ children }) => {
                 <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Theme</div>
                 <div className="flex items-center space-x-2">
                   <button
+                    id="theme-toggle"
                     onClick={(e) => {
                       e.preventDefault();
-                      document.getElementById('theme-toggle')?.click();
+                      document.getElementById('theme-toggle-btn')?.click();
                     }}
                     className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-blue-500 to-purple-600 text-white text-center"
                   >
@@ -215,7 +216,7 @@ const AppLayout = ({ children }) => {
             <div>
               <h3 className="text-sm font-semibold text-gray-300">Resources</h3>
               <ul className="mt-2 space-y-1 text-sm text-gray-400">
-                <li><Link to="/docs" className="hover:text-white">Documentation</Link></li>
+                <li><a href="https://github.com/aliasfoxkde/Atheon-GitHub-Scanner#readme" className="hover:text-white">Documentation</a></li>
                 <li><Link to="/api" className="hover:text-white">API Reference</Link></li>
                 <li><a href="https://github.com/aliasfoxkde/Atheon-GitHub-Scanner" className="hover:text-white">GitHub</a></li>
               </ul>

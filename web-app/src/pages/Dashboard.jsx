@@ -106,6 +106,14 @@ const Dashboard = () => {
           high: data.security_stats?.high || 0,
           medium: data.security_stats?.medium || 0,
           low: data.security_stats?.low || 0,
+          // Real security pattern types from scanner
+          dependencyVulns: data.security_pattern_distribution?.['Dependency vulnerabilities'] || 0,
+          sqlInjection: data.security_pattern_distribution?.['SQL injection'] || 0,
+          codeInjection: data.security_pattern_distribution?.['Code injection'] || 0,
+          xss: (data.security_pattern_distribution?.['XSS'] || 0) + (data.security_pattern_distribution?.['XSS vulnerability'] || 0),
+          crypto: data.security_pattern_distribution?.['Crypto'] || data.security_pattern_distribution?.['Cryptography'] || 0,
+          secrets: data.security_pattern_distribution?.['Secrets'] || data.security_pattern_distribution?.['Secret exposure'] || 0,
+          config: data.security_pattern_distribution?.['Config'] || data.security_pattern_distribution?.['Configuration'] || 0,
         },
         apiStatus: 'healthy',
         dataSource: data.data_source || 'unknown',
@@ -185,26 +193,11 @@ const Dashboard = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch(`${getApiConfig().baseUrl}/api/refresh`, { method: 'POST' });
-      const result = await response.json();
-      if (result.success) {
-        const data = result.data;
-        setStats((prev) => ({
-          ...prev,
-          totalRepos: data.total_repositories || data.total_packages || prev.totalRepos,
-          totalScans: data.total_scans || data.total_packages || prev.totalScans,
-          avgQualityScore: data.average_quality_score || prev.avgQualityScore,
-          tierDistribution: data.tier_distribution || prev.tierDistribution,
-          lastUpdated: data.last_updated || new Date().toISOString(),
-        }));
-        toast.success('Dashboard refreshed');
-      } else {
-        throw new Error(result.error || 'Refresh failed');
-      }
-    } catch (err) {
-      // Fallback: re-run the local fetch
+      // Re-fetch local embedded data — no external API needed
       await fetchStats();
-      toast.info('Refreshed from embedded data');
+      toast.success('Dashboard refreshed');
+    } catch (err) {
+      toast.error('Refresh failed');
     } finally {
       setRefreshing(false);
     }
@@ -463,7 +456,7 @@ const Dashboard = () => {
               icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />} />
             <StatCard label="Total Scans" value={stats.totalScans.toLocaleString()} color="purple"
               icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />} />
-            <StatCard label="Critical" value={stats.criticalIssues.toLocaleString()} color="red"
+            <StatCard label="Security Findings" value={stats.criticalIssues.toLocaleString()} color="red"
               icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />} />
           </div>
 
@@ -603,6 +596,15 @@ const Dashboard = () => {
 };
 
 function StatCard({ label, value, color, icon }) {
+  const colorClasses = {
+    blue: { bg: 'bg-blue-500/20', text: 'text-blue-500' },
+    green: { bg: 'bg-green-500/20', text: 'text-green-500' },
+    purple: { bg: 'bg-purple-500/20', text: 'text-purple-500' },
+    red: { bg: 'bg-red-500/20', text: 'text-red-500' },
+    yellow: { bg: 'bg-yellow-500/20', text: 'text-yellow-500' },
+    orange: { bg: 'bg-orange-500/20', text: 'text-orange-500' },
+  };
+  const { bg, text } = colorClasses[color] || colorClasses.blue;
   return (
     <div className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
       <div className="flex items-center justify-between">
@@ -610,8 +612,8 @@ function StatCard({ label, value, color, icon }) {
           <p className="text-xs sm:text-sm text-gray-400">{label}</p>
           <p className="text-2xl sm:text-3xl font-bold text-white mt-1 truncate">{value}</p>
         </div>
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-${color}-500/20 rounded-lg flex items-center justify-center flex-shrink-0`}>
-          <svg className={`w-5 h-5 sm:w-6 sm:h-6 text-${color}-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+          <svg className={`w-5 h-5 sm:w-6 sm:h-6 ${text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {icon}
           </svg>
         </div>

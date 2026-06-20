@@ -11,19 +11,22 @@ export default function SecurityRadarChart({ securityData, totalRepos, size = 40
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  // Enhanced security metrics calculation
+  // Real security metrics from actual scan data patterns
   const calculateMetrics = () => {
     const { totalFindings, critical, high, medium, low } = securityData;
+    const repos = totalRepos || 1;
 
+    // Map real security pattern types from actual scanner output to radar axes
+    // Based on actual pattern types found in mass_scan_results.jsonl
     return {
-      'Injection Attacks': Math.min((high * 0.8 + medium * 0.3) / (totalRepos || 1) * 10, 100),
-      'XSS Vulnerabilities': Math.min((high * 0.6 + medium * 0.2) / (totalRepos || 1) * 10, 100),
-      'Auth Issues': Math.min((critical * 2 + high * 0.4) / (totalRepos || 1) * 10, 100),
-      'Crypto Weakness': Math.min((critical + high * 0.3) / (totalRepos || 1) * 10, 100),
-      'Config Security': Math.min((medium + low * 0.5) / (totalRepos || 1) * 10, 100),
-      'Data Exposure': Math.min((critical * 1.5 + high * 0.5) / (totalRepos || 1) * 10, 100),
-      'API Security': Math.min((high * 0.7 + medium * 0.4) / (totalRepos || 1) * 10, 100),
-      'Dependencies': Math.min((medium * 0.8 + low * 0.3) / (totalRepos || 1) * 10, 100)
+      'Dependency Vulns': Math.min((securityData.dependencyVulns || 0) / repos * 50, 100),
+      'SQL Injection': Math.min((securityData.sqlInjection || 0) / repos * 50, 100),
+      'Code Injection': Math.min((securityData.codeInjection || 0) / repos * 50, 100),
+      'XSS': Math.min((securityData.xss || 0) / repos * 50, 100),
+      'Auth Issues': Math.min((critical * 2 + high * 0.4) / repos * 10, 100),
+      'Crypto': Math.min((securityData.crypto || 0) / repos * 50, 100),
+      'Secrets Leaked': Math.min((securityData.secrets || 0) / repos * 50, 100),
+      'Config Issues': Math.min((securityData.config || 0) / repos * 50, 100)
     };
   };
 

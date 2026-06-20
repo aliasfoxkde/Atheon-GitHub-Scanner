@@ -224,7 +224,7 @@ export default function Pipeline() {
                 <div className="bg-gray-900 rounded-lg p-4">
                   <div className="text-gray-400">Avg quality</div>
                   <div className="text-2xl font-bold text-white mt-1">
-                    {qualityStats.mean?.toFixed?.(1) ?? '—'}
+                    {qualityStats.average?.toFixed?.(1) ?? '—'}
                   </div>
                 </div>
                 <div className="bg-gray-900 rounded-lg p-4">

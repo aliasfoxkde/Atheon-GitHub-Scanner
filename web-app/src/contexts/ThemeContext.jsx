@@ -2,6 +2,23 @@ import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 const ThemeContext = createContext();
 
+// Compute initial dark state synchronously to prevent first-paint flash
+const getInitialDark = () => {
+  const saved = localStorage.getItem('atheon-theme');
+  if (saved === 'dark') return true;
+  if (saved === 'light') return false;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+};
+
+// Sync dark class immediately before React paints
+if (getInitialDark()) {
+  document.documentElement.classList.add('dark');
+  document.documentElement.setAttribute('data-theme', 'dark');
+} else {
+  document.documentElement.classList.remove('dark');
+  document.documentElement.setAttribute('data-theme', 'light');
+}
+
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
@@ -11,18 +28,8 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState('system');
-  const [isDark, setIsDark] = useState(true);
-
-  // Initialize theme from localStorage or system preference
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('atheon-theme');
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else {
-      setTheme('system');
-    }
-  }, []);
+  const [theme, setTheme] = useState(() => localStorage.getItem('atheon-theme') || 'system');
+  const [isDark, setIsDark] = useState(getInitialDark);
 
   // Update dark mode based on theme preference
   useEffect(() => {
