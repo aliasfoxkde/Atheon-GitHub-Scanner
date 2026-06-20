@@ -1,0 +1,70 @@
+import { createContext, useCallback, useContext, useReducer, useRef } from 'react';
+
+const ToastContext = createContext(null);
+
+let nextId = 1;
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'ADD':
+      return [...state, action.toast];
+    case 'DISMISS':
+      return state.filter((t) => t.id !== action.id);
+    case 'CLEAR':
+      return [];
+    default:
+      return state;
+  }
+}
+
+export function ToastProvider({ children }) {
+  const [toasts, dispatch] = useReducer(reducer, []);
+  const timers = useRef(new Map());
+
+  const dismiss = useCallback((id) => {
+    if (timers.current.has(id)) {
+      clearTimeout(timers.current.get(id));
+      timers.current.delete(id);
+    }
+    dispatch({ type: 'DISMISS', id });
+  }, []);
+
+  const show = useCallback(
+    (message, { type = 'info', duration = 4000 } = {}) => {
+      const id = nextId++;
+      const toast = { id, message, type };
+      dispatch({ type: 'ADD', toast });
+      if (duration > 0) {
+        const timer = setTimeout(() => dismiss(id), duration);
+        timers.current.set(id, timer);
+      }
+      return id;
+    },
+    [dismiss]
+  );
+
+  const value = {
+    toasts,
+    show,
+    success: (msg, opts) => show(msg, { ...opts, type: 'success' }),
+    error: (msg, opts) => show(msg, { ...opts, type: 'error' }),
+    info: (msg, opts) => show(msg, { ...opts, type: 'info' }),
+    warning: (msg, opts) => show(msg, { ...opts, type: 'warning' }),
+    dismiss,
+    clear: () => {
+      timers.current.forEach(clearTimeout);
+      timers.current.clear();
+      dispatch({ type: 'CLEAR' });
+    },
+  };
+
+  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+}
+
+export function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return ctx;
+}

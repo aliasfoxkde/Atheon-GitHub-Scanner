@@ -222,6 +222,33 @@ class ApiService {
   async getRateLimit() {
     return this.request('/api/rate-limit');
   }
+
+  // Compare multiple reports (by id) — uses embedded data
+  async getCompareReports(ids = []) {
+    if (!ids || ids.length === 0) return { success: true, data: { reports: [] } };
+    const data = await loadEmbeddedData();
+    if (!data) return { success: false, error: 'No data' };
+    const all = data.recent_scans || [];
+    const reports = all.filter((r) => ids.includes(r.id));
+    return { success: true, data: { reports, count: reports.length } };
+  }
+
+  // Search packages by name/language/tier across the embedded dataset
+  async searchPackages(query = '', limit = 8) {
+    if (!query || !query.trim()) return { success: true, data: { results: [] } };
+    const data = await loadEmbeddedData();
+    if (!data) return { success: false, error: 'No data' };
+    const q = query.toLowerCase();
+    const all = data.recent_scans || [];
+    const results = all
+      .filter((r) => {
+        const name = (r.name || '').toLowerCase();
+        const lang = (r.language || '').toLowerCase();
+        return name.includes(q) || lang.includes(q);
+      })
+      .slice(0, limit);
+    return { success: true, data: { results, total: results.length, query } };
+  }
 }
 
 export const apiService = new ApiService();

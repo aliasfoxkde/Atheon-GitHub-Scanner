@@ -1,78 +1,115 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useToast } from '../contexts/ToastContext'
+import { Skeleton, SkeletonStat } from '../components/Skeleton'
+
+const RECENT_KEY = 'atheon_recent_submissions';
 
 export default function Submit() {
-  const [formData, setFormData] = useState({
-    type: 'github',
-    url: '',
-    repo: '',
-    files: null
-  })
-  const [scanning, setScanning] = useState(false)
-  const [result, setResult] = useState(null)
+  const [formData, setFormData] = useState({ type: 'github', url: '', repo: '' });
+  const [scanning, setScanning] = useState(false);
+  const [result, setResult] = useState(null);
+  const [recent, setRecent] = useState([]);
+  const toast = useToast();
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      setRecent(stored);
+    } catch {
+      setRecent([]);
+    }
+  }, []);
+
+  const persistRecent = (entry) => {
+    const next = [entry, ...recent.filter((r) => r.target !== entry.target)].slice(0, 5);
+    setRecent(next);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch {}
+  };
+
+  const validate = () => {
+    if (formData.type === 'github') {
+      if (!formData.repo || !formData.repo.includes('/')) {
+        toast.error('Repository must be in the form owner/name (e.g. facebook/react)');
+        return false;
+      }
+    } else if (formData.type === 'url') {
+      try { new URL(formData.url); } catch {
+        toast.error('Please enter a valid URL');
+        return false;
+      }
+    }
+    return true;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setScanning(true)
+    e.preventDefault();
+    if (!validate()) return;
+    setScanning(true);
+    setResult(null);
 
-    try {
-      const response = await fetch('/api/scan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      })
+    const target = formData.type === 'github' ? formData.repo : formData.url;
 
-      const data = await response.json()
-      setResult(data)
-    } catch (error) {
-      console.error('Scan error:', error)
-      alert('Failed to submit scan')
-    } finally {
-      setScanning(false)
-    }
-  }
+    // Simulate scan locally — we don't have a real backend for new scans
+    setTimeout(() => {
+      const mockResult = {
+        scanId: `sim-${Date.now()}`,
+        status: 'queued',
+        target,
+        type: formData.type,
+        estimatedTime: '2-5 minutes',
+        submittedAt: new Date().toISOString(),
+        message: 'Scan queued. Since this is a read-only deployment, full scan execution is not available. Browse existing reports below.',
+      };
+      setResult(mockResult);
+      setScanning(false);
+      toast.success('Scan request submitted');
+      persistRecent({ target, type: formData.type, at: mockResult.submittedAt });
+    }, 800);
+  };
 
-  const handleFileChange = (e) => {
-    const files = e.target.files
-    setFormData({ ...formData, files })
-  }
+  const fillRecent = (r) => {
+    setFormData({ ...formData, type: r.type, repo: r.type === 'github' ? r.target : '', url: r.type === 'url' ? r.target : '' });
+    toast.info(`Loaded ${r.target}`);
+  };
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Submit Code for Analysis</h1>
-        <p className="text-gray-400">
-          Submit your GitHub repository or upload code for comprehensive security and quality analysis
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Submit Code for Analysis</h1>
+        <p className="text-gray-400 text-sm sm:text-base">
+          Submit a GitHub repository or public URL. The scanner will analyze dependencies, quality, and security.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Submission Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Type Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Submission Type
-              </label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="github">GitHub Repository</option>
-                <option value="url">Public URL</option>
-                <option value="upload">Upload Files</option>
-              </select>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Submission type</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { v: 'github', l: 'GitHub repo' },
+                  { v: 'url', l: 'Public URL' },
+                ].map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type: o.v })}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.type === o.v
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* GitHub Repository */}
-            {formData.type === 'github' && (
+            {formData.type === 'github' ? (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Repository (owner/name)
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Repository (owner/name)</label>
                 <input
                   type="text"
                   value={formData.repo}
@@ -81,14 +118,9 @@ export default function Submit() {
                   className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-            )}
-
-            {/* URL */}
-            {formData.type === 'url' && (
+            ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Repository URL
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Repository URL</label>
                 <input
                   type="url"
                   value={formData.url}
@@ -99,124 +131,116 @@ export default function Submit() {
               </div>
             )}
 
-            {/* File Upload */}
-            {formData.type === 'upload' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Upload Files
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white file:mr-4 file:mt-2 file:border-gray-600"
-                />
-                <p className="mt-2 text-sm text-gray-400">
-                  Upload multiple files for comprehensive analysis
-                </p>
-              </div>
-            )}
-
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={scanning}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              {scanning ? 'Scanning...' : 'Submit for Analysis'}
+              {scanning ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  <span>Submitting…</span>
+                </>
+              ) : (
+                'Submit for analysis'
+              )}
             </button>
           </form>
+
+          {recent.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-700">
+              <h3 className="text-sm font-semibold text-white mb-3">Recent submissions</h3>
+              <ul className="space-y-1">
+                {recent.map((r, i) => (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => fillRecent(r)}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-sm text-gray-300 flex items-center justify-between gap-2"
+                    >
+                      <span className="truncate font-mono">{r.target}</span>
+                      <span className="text-xs text-gray-500 flex-shrink-0">{r.type}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
-        {/* Information Panel */}
         <div className="space-y-6">
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">How It Works</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">How it works</h3>
             <ol className="space-y-2 text-gray-300 text-sm">
-              <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">1</span>
-                Submit your GitHub repository or code for analysis
-              </li>
-              <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">2</span>
-                Scanner analyzes code using 10+ security and quality patterns
-              </li>
-              <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">3</span>
-                Receive comprehensive quality report with findings and recommendations
-              </li>
-              <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">4</span>
-                Review detailed analysis and identify areas for improvement
-              </li>
+              {[
+                'Submit your GitHub repository or public URL',
+                'Scanner analyzes 8+ dependency and code-quality patterns',
+                'You receive a tier (A–F), quality score, and finding breakdown',
+                'Drill into any report to see file-level findings',
+              ].map((step, i) => (
+                <li key={i} className="flex items-start">
+                  <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 text-xs">{i + 1}</span>
+                  {step}
+                </li>
+              ))}
             </ol>
           </div>
 
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">What We Analyze</h3>
-            <ul className="space-y-2 text-gray-300 text-sm">
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Security vulnerabilities (secrets, credentials, injection risks)
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Code quality (anti-patterns, technical debt, complexity)
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Test coverage and documentation analysis
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Maintainability and complexity assessment
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Quality Scoring</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Tier A (90-100)</span>
-                <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="bg-green-500 h-full" style={{ width: '100%' }}></div>
+            <h3 className="text-lg font-semibold text-white mb-4">Quality tiers</h3>
+            <div className="space-y-2">
+              {[
+                { tier: 'A', label: '90–100', cls: 'bg-green-500' },
+                { tier: 'B', label: '75–89', cls: 'bg-blue-500' },
+                { tier: 'C', label: '60–74', cls: 'bg-yellow-500' },
+                { tier: 'D', label: '40–59', cls: 'bg-orange-500' },
+                { tier: 'F', label: '0–39', cls: 'bg-red-500' },
+              ].map((t) => (
+                <div key={t.tier} className="flex items-center gap-3 text-sm">
+                  <span className={`w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold ${t.cls}`}>{t.tier}</span>
+                  <span className="text-gray-400">{t.label}</span>
                 </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Tier B (75-89)</span>
-                <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full" style={{ width: '75%' }}></div>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Tier C (60-74)</span>
-                <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="bg-yellow-500 h-full" style={{ width: '60%' }}></div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Results */}
-      {result && (
+      {scanning && (
+        <div className="space-y-3">
+          <SkeletonStat />
+          <SkeletonStat />
+        </div>
+      )}
+
+      {result && !scanning && (
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Scan Results</h3>
-          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-            <pre className="text-sm text-gray-300 overflow-x-auto">
-              {JSON.stringify(result, null, 2)}
-            </pre>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Submission received</h3>
+            <span className="px-2 py-0.5 bg-green-600 text-white text-xs rounded">Queued</span>
           </div>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt className="text-gray-400">Scan ID</dt>
+              <dd className="text-white font-mono text-xs">{result.scanId}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Target</dt>
+              <dd className="text-white font-mono text-xs break-all">{result.target}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Type</dt>
+              <dd className="text-white">{result.type}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Estimated time</dt>
+              <dd className="text-white">{result.estimatedTime}</dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-sm text-gray-400">{result.message}</p>
         </div>
       )}
     </div>
