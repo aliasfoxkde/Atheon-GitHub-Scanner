@@ -1,0 +1,29 @@
+# Dockerfile for Python/PyPI Scanner
+FROM python:3.11-slim
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create working directory
+WORKDIR /scan
+
+# Copy scanner script
+COPY agents/python_ultra_fast_scanner.py /scan/
+COPY agents/docker_base_scanner.py /scan/
+
+# Install Python dependencies
+RUN pip3 install requests
+
+# Create output directory
+RUN mkdir -p /scan/data
+
+# Set up pip environment
+ENV PIP_CACHE_DIR=/pip-cache
+RUN mkdir -p /pip-cache
+
+# Default command
+CMD ["python3", "python_ultra_fast_scanner.py", "--count", "100", "--output", "/scan/data", "--temp", "/tmp/atheon-scanner"]

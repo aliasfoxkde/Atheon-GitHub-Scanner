@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # RubyGems Scanner Service
+  rubygems-scanner:
+    build:
+      context: ..
+      dockerfile: docker/scanners/Dockerfile.ruby
+    volumes:
+      - ../agents:/scan:ro
+      - ../data:/scan/data
+    environment:
+      - SCAN_COUNT=50
+      - OUTPUT_DIR=/scan/data
+      - TEMP_DIR=/tmp/atheon-scanner
+    mem_limit: 2g
+    cpus: 2
+    networks:
+      - scanner-network
+
+  # Cargo/Rust Scanner Service
+  cargo-scanner:
+    build:
+      context: ..
+      dockerfile: docker/scanners/Dockerfile.cargo
+    volumes:
+      - ../agents:/scan:ro
+      - ../data:/scan/data
+    environment:
+      - SCAN_COUNT=50
+      - OUTPUT_DIR=/scan/data
+      - TEMP_DIR=/tmp/atheon-scanner
+    mem_limit: 2g
+    cpus: 2
+    networks:
+      - scanner-network
+
+  # Go Modules Scanner Service
+  go-scanner:
+    build:
+      context: ..
+      dockerfile: docker/scanners/Dockerfile.go
+    volumes:
+      - ../agents:/scan:ro
+      - ../data:/scan/data
+    environment:
+      - SCAN_COUNT=50
+      - OUTPUT_DIR=/scan/data
+      - TEMP_DIR=/tmp/atheon-scanner
+    mem_limit: 2g
+    cpus: 2
+    networks:
+      - scanner-network
+
+  # Python/PyPI Scanner Service
+  python-scanner:
+    build:
+      context: ..
+      dockerfile: docker/scanners/Dockerfile.python
+    volumes:
+      - ../agents:/scan:ro
+      - ../data:/scan/data
+    environment:
+      - SCAN_COUNT=100
+      - OUTPUT_DIR=/scan/data
+      - TEMP_DIR=/tmp/atheon-scanner
+    mem_limit: 2g
+    cpus: 2
+    networks:
+      - scanner-network
+
+  # Pattern Analysis Service
+  pattern-analyzer:
+    build:
+      context: ..
+      dockerfile: docker/scanners/Dockerfile.pattern
+    volumes:
+      - ../data:/data:ro
+      - ../docs:/docs
+    environment:
+      - DATA_DIR=/data
+      - OUTPUT_DIR=/docs
+    mem_limit: 1g
+    cpus: 1
+    networks:
+      - scanner-network
+
+networks:
+  scanner-network:
+    driver: bridge
