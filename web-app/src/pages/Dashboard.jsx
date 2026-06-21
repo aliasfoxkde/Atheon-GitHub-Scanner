@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { getScoreColor, getTierColor } from '../utils/colors';
 import { Link, useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
 import { loadRealScannerData, checkApiHealth, getApiConfig } from '../services/realScannerData';
@@ -27,6 +28,8 @@ const Dashboard = () => {
       medium: 0,
       low: 0,
     },
+    qualityStats: { average: 0, median: 0, std_dev: 0, min: 0, max: 0 },
+    qualityBuckets: [],
     apiStatus: 'unknown',
     dataSource: 'unknown',
   });
@@ -67,21 +70,41 @@ const Dashboard = () => {
     return () => window.removeEventListener('mousedown', onClick);
   }, []);
 
-  const fetchStats = async () => {
+  const fetchStats = async (signal) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await loadRealScannerData();
+      const response = await loadRealScannerData(signal);
       if (!response) throw new Error('No data received from scanner');
 
       const data = response.data || response;
+
+      // Compute quality score distribution buckets (0-10, 10-20, ..., 90-100)
+      const allScores = (data.recent_scans || []).map((s) => s.quality_score || 0);
+      const qualityBuckets = Array.from({ length: 10 }, (_, i) => ({
+        range: i === 9 ? '90-100' : `${i * 10}-${i * 10 + 10}`,
+        count: allScores.filter((s) => i === 9 ? s >= 90 : (s >= i * 10 && s < i * 10 + 10)).length,
+      }));
+
+      // Compute real quality stats from raw scores
+      const sortedScores = [...allScores].sort((a, b) => a - b);
+      const mean = allScores.reduce((a, b) => a + b, 0) / (allScores.length || 1);
+      const variance = allScores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / (allScores.length || 1);
+      const stdDev = Math.sqrt(variance);
+      const qualityStats = {
+        average: mean,
+        median: sortedScores[Math.floor(sortedScores.length / 2)] || 0,
+        std_dev: stdDev,
+        min: sortedScores[0] || 0,
+        max: sortedScores[sortedScores.length - 1] || 0,
+      };
 
       setStats({
         totalRepos: data.total_repositories || data.total_packages || 0,
         avgQualityScore: data.average_quality_score || 0,
         totalScans: data.total_scans || data.total_packages || 0,
-        criticalIssues: data.tier_distribution?.F || data.security_stats?.critical || 0,
+        criticalIssues: data.security_stats?.critical || data.security_stats?.total_findings || 0,
         tierDistribution: data.tier_distribution || { A: 0, B: 0, C: 0, D: 0, F: 0 },
         recentScans: (data.recent_scans || []).slice(0, 10).map((scan) => ({
           id: scan.id || scan.scan_id || scan.name,
@@ -106,7 +129,6 @@ const Dashboard = () => {
           high: data.security_stats?.high || 0,
           medium: data.security_stats?.medium || 0,
           low: data.security_stats?.low || 0,
-          // Real security pattern types from scanner
           dependencyVulns: data.security_pattern_distribution?.['Dependency vulnerabilities'] || 0,
           sqlInjection: data.security_pattern_distribution?.['SQL injection'] || 0,
           codeInjection: data.security_pattern_distribution?.['Code injection'] || 0,
@@ -115,13 +137,16 @@ const Dashboard = () => {
           secrets: data.security_pattern_distribution?.['Secrets'] || data.security_pattern_distribution?.['Secret exposure'] || 0,
           config: data.security_pattern_distribution?.['Config'] || data.security_pattern_distribution?.['Configuration'] || 0,
         },
+        qualityStats,
+        qualityBuckets,
         apiStatus: 'healthy',
         dataSource: data.data_source || 'unknown',
         dataFilesCount: data.data_files_count || 0,
         lastUpdated: data.last_updated || new Date().toISOString(),
       });
     } catch (err) {
-      console.error('❌ Error loading real scanner data:', err);
+      if (err.name === 'AbortError') return;
+      toast.error('Failed to load dashboard data');
       setError(err.message);
       setStats((prev) => ({ ...prev, apiStatus: 'error', dataSource: 'error' }));
     } finally {
@@ -129,9 +154,9 @@ const Dashboard = () => {
     }
   };
 
-  const checkHealth = async () => {
+  const checkHealth = async (signal) => {
     try {
-      const health = await checkApiHealth();
+      const health = await checkApiHealth(signal);
       if (health.status === 'healthy') {
         setStats((prev) => ({
           ...prev,
@@ -141,22 +166,29 @@ const Dashboard = () => {
         }));
       }
     } catch (err) {
+      if (err.name === 'AbortError') return;
       setStats((prev) => ({ ...prev, apiStatus: 'unavailable', dataSource: 'fallback' }));
     }
   };
 
   // Initial load + auto-refresh driven by user setting
   useEffect(() => {
-    fetchStats();
-    checkHealth();
+    const controller = new AbortController();
+    fetchStats(controller.signal);
+    checkHealth(controller.signal);
     const seconds = Number(settings.autoRefreshInterval) || 0;
+    let interval;
     if (seconds > 0) {
-      const interval = setInterval(() => {
-        fetchStats();
-        checkHealth();
+      interval = setInterval(() => {
+        const ctrl = new AbortController();
+        fetchStats(ctrl.signal);
+        checkHealth(ctrl.signal);
       }, seconds * 1000);
-      return () => clearInterval(interval);
     }
+    return () => {
+      controller.abort();
+      if (interval) clearInterval(interval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.autoRefreshInterval]);
 
@@ -391,7 +423,7 @@ const Dashboard = () => {
           {/* Share Button */}
           <button
             onClick={handleShare}
-            className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-2"
             aria-label="Share dashboard"
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -442,7 +474,7 @@ const Dashboard = () => {
               <span className="text-gray-400 text-sm">
                 Updated: <span className="text-white font-medium">{formatDate(stats.lastUpdated)}</span>
               </span>
-              <span className="text-gray-500 text-xs ml-auto hidden sm:inline">
+              <span className="text-gray-400 text-xs ml-auto hidden sm:inline">
                 Auto-refresh: {Number(settings.autoRefreshInterval) > 0 ? `${settings.autoRefreshInterval}s` : 'off'}
               </span>
             </div>
@@ -458,6 +490,21 @@ const Dashboard = () => {
               icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />} />
             <StatCard label="Security Findings" value={stats.criticalIssues.toLocaleString()} color="red"
               icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />} />
+          </div>
+
+          {/* Quality score supplemental stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Median Score', value: stats.qualityStats.median.toFixed(1), color: 'text-blue-400' },
+              { label: 'Std Dev', value: `±${stats.qualityStats.std_dev.toFixed(1)}`, color: 'text-gray-400' },
+              { label: 'Min Score', value: stats.qualityStats.min.toFixed(0), color: 'text-red-400' },
+              { label: 'Max Score', value: stats.qualityStats.max.toFixed(0), color: 'text-green-400' },
+            ].map((s) => (
+              <div key={s.label} className="bg-gray-800 rounded-lg p-3 border border-gray-700 flex items-center justify-between">
+                <span className="text-xs text-gray-400">{s.label}</span>
+                <span className={`text-lg font-bold ${s.color}`}>{s.value}</span>
+              </div>
+            ))}
           </div>
 
           {/* Two Column Layout */}
@@ -486,17 +533,17 @@ const Dashboard = () => {
                           <div className="flex items-center flex-wrap gap-x-2 mt-1">
                             <span className="text-xs sm:text-sm text-gray-400">{scan.language}</span>
                             {scan.stars > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-400">
                                 {scan.stars >= 1000 ? `${(scan.stars / 1000).toFixed(1)}k stars` : `${scan.stars} stars`}
                               </span>
                             )}
                             {scan.totalDependencies > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-400">
                                 {scan.totalDependencies} deps
                               </span>
                             )}
                             {scan.totalFiles > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-400">
                                 {scan.totalFiles.toLocaleString()} files
                               </span>
                             )}
@@ -535,6 +582,52 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Quality Distribution */}
+          {stats.qualityBuckets.length > 0 && (
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 hover:border-blue-500/30 transition-all">
+              <div className="p-4 sm:p-6 border-b border-gray-700 flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-semibold text-white">Quality Score Distribution</h2>
+                <div className="flex gap-4 text-xs text-gray-400">
+                  <span>σ {stats.qualityStats.std_dev.toFixed(1)}</span>
+                  <span>Median {stats.qualityStats.median.toFixed(1)}</span>
+                  <span>Range {stats.qualityStats.min.toFixed(0)}–{stats.qualityStats.max.toFixed(0)}</span>
+                </div>
+              </div>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-end gap-1 h-32">
+                  {stats.qualityBuckets.map((bucket, i) => {
+                    const maxCount = Math.max(...stats.qualityBuckets.map((b) => b.count), 1);
+                    const pct = (bucket.count / maxCount) * 100;
+                    return (
+                      <div key={bucket.range} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full flex flex-col items-center justify-end h-24">
+                          <div
+                            className={`w-full rounded-t transition-all duration-300 hover:opacity-80 ${
+                              i >= 9 ? 'bg-green-500/70' :
+                              i >= 7 ? 'bg-blue-500/70' :
+                              i >= 5 ? 'bg-yellow-500/70' :
+                              'bg-red-500/70'
+                            }`}
+                            style={{ height: `${Math.max(pct, 2)}%` }}
+                            title={`${bucket.range}: ${bucket.count} packages`}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">{bucket.range}</span>
+                        <span className="text-xs font-medium text-gray-300">{bucket.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-center gap-6 mt-3 text-xs">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-red-500/70" /> &lt;50</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-yellow-500/70" /> 50–70</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-blue-500/70" /> 70–90</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-green-500/70" /> 90–100</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tier Distribution */}
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 hover:border-purple-500/30 transition-all">
             <div className="p-4 sm:p-6 border-b border-gray-700">
@@ -555,7 +648,7 @@ const Dashboard = () => {
                 {stats.topLanguages.map((lang, index) => (
                   <div key={lang.language} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 min-w-0">
-                      <span className="text-lg font-bold text-gray-500">#{index + 1}</span>
+                      <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
                       <span className="text-sm sm:text-base text-white font-medium truncate">{lang.language}</span>
                       <span className="text-xs sm:text-sm text-gray-400">{lang.count.toLocaleString()} pkgs</span>
                     </div>
@@ -620,23 +713,6 @@ function StatCard({ label, value, color, icon }) {
       </div>
     </div>
   );
-}
-
-function getScoreColor(score) {
-  if (score >= 90) return 'text-green-500';
-  if (score >= 75) return 'text-blue-500';
-  if (score >= 60) return 'text-yellow-500';
-  return 'text-red-500';
-}
-
-function getTierColor(tier) {
-  switch (tier) {
-    case 'A': return 'bg-green-500 text-white';
-    case 'B': return 'bg-blue-500 text-white';
-    case 'C': return 'bg-yellow-500 text-white';
-    case 'D': return 'bg-orange-500 text-white';
-    default: return 'bg-red-500 text-white';
-  }
 }
 
 export default Dashboard;

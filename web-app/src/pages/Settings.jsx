@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
@@ -16,10 +17,15 @@ export default function Settings() {
   const { theme, setThemeMode } = useTheme();
   const toast = useToast();
 
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const handleReset = () => {
-    if (confirm('Reset all settings to defaults?')) {
+    if (showResetConfirm) {
       reset();
       toast.success('Settings reset to defaults');
+      setShowResetConfirm(false);
+    } else {
+      setShowResetConfirm(true);
+      setTimeout(() => setShowResetConfirm(false), 4000);
     }
   };
 
@@ -160,7 +166,7 @@ export default function Settings() {
           onClick={handleReset}
           className="mt-6 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
         >
-          Reset all settings
+          {showResetConfirm ? 'Click again to confirm reset' : 'Reset all settings'}
         </button>
       </section>
     </div>

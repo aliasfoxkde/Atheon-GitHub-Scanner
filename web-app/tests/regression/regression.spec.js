@@ -19,8 +19,8 @@ test.describe('Regression Tests', () => {
     // Should have numeric values on the page
     expect(count).toBeGreaterThan(0);
 
-    // Check specifically for repository count in reasonable range
-    const repoCard = page.locator('text=Repositories').locator('..');
+    // Check specifically for package count in reasonable range
+    const repoCard = page.locator('text=Packages Analyzed').locator('..');
     await expect(repoCard.first()).toBeVisible();
 
     // Should have some numeric value in the repo card (not 0 or 165)

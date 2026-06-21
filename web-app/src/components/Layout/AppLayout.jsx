@@ -73,6 +73,13 @@ const AppLayout = ({ children }) => {
               }`}>
                 API
               </Link>
+              <Link to="/about" className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                isActive('/about')
+                  ? 'text-white bg-gradient-to-r from-blue-500 to-purple-600 shadow-md'
+                  : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}>
+                About
+              </Link>
               <Link to="/settings" className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 isActive('/settings')
                   ? 'text-white bg-gradient-to-r from-blue-500 to-purple-600 shadow-md'
@@ -93,6 +100,8 @@ const AppLayout = ({ children }) => {
               <ThemeToggle />
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                aria-expanded={mobileMenuOpen}
                 className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-2 rounded-lg transition-colors"
               >
                 {mobileMenuOpen ? (
@@ -175,6 +184,15 @@ const AppLayout = ({ children }) => {
                 }`}
               >
                 Settings
+              </Link>
+              <Link
+                to="/about"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-md text-base font-medium ${
+                  isActive('/about') ? 'text-white bg-gradient-to-r from-blue-500 to-purple-600' : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                About
               </Link>
 
               {/* Theme Toggle in Mobile Menu */}

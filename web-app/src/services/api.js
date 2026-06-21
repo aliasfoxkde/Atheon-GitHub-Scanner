@@ -9,29 +9,41 @@ let dataCache = null;
 let dataCacheTime = 0;
 const CACHE_TTL = 60000; // 60 seconds
 
-async function loadEmbeddedData() {
+async function loadEmbeddedData(signal) {
   const now = Date.now();
   if (dataCache && (now - dataCacheTime) < CACHE_TTL) {
     return dataCache;
   }
-
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  const combinedSignal = signal
+    ? AbortSignal.any([controller.signal, signal])
+    : controller.signal;
   try {
-    const response = await fetch(EMBEDDED_DATA_URL);
+    const response = await fetch(EMBEDDED_DATA_URL, { signal: combinedSignal });
+    clearTimeout(timer);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     dataCache = await response.json();
     dataCacheTime = now;
     return dataCache;
   } catch (e) {
-    console.warn('Failed to load embedded data:', e);
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw e;
     return null;
   }
 }
 
 class ApiService {
-  async request(endpoint, options = {}) {
+  async request(endpoint, options = {}, signal) {
     const url = `${API_BASE_URL}${endpoint}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15_000);
+    const combinedSignal = signal
+      ? AbortSignal.any([controller.signal, signal])
+      : controller.signal;
     const config = {
       ...options,
+      signal: combinedSignal,
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -40,6 +52,7 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
+      clearTimeout(timer);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -53,14 +66,15 @@ class ApiService {
       const data = await response.json();
       return { success: true, data };
     } catch (error) {
+      clearTimeout(timer);
+      if (error.name === 'AbortError') throw error;
       // Fall back to embedded data
-      console.warn(`API ${endpoint} failed, using embedded data:`, error.message);
       return this.handleEmbeddedFallback(endpoint, options);
     }
   }
 
-  async handleEmbeddedFallback(endpoint, options) {
-    const data = await loadEmbeddedData();
+  async handleEmbeddedFallback(endpoint, options, signal) {
+    const data = await loadEmbeddedData(signal);
     if (!data) {
       return { success: false, error: 'No data available' };
     }
@@ -229,9 +243,9 @@ class ApiService {
   }
 
   // Compare multiple reports (by id) — uses embedded data
-  async getCompareReports(ids = []) {
+  async getCompareReports(ids = [], signal) {
     if (!ids || ids.length === 0) return { success: true, data: { reports: [] } };
-    const data = await loadEmbeddedData();
+    const data = await loadEmbeddedData(signal);
     if (!data) return { success: false, error: 'No data' };
     const all = data.recent_scans || [];
     const reports = all.filter((r) => ids.includes(r.id));
@@ -239,9 +253,9 @@ class ApiService {
   }
 
   // Search packages by name/language/tier across the embedded dataset
-  async searchPackages(query = '', limit = 8) {
+  async searchPackages(query = '', limit = 8, signal) {
     if (!query || !query.trim()) return { success: true, data: { results: [] } };
-    const data = await loadEmbeddedData();
+    const data = await loadEmbeddedData(signal);
     if (!data) return { success: false, error: 'No data' };
     const q = query.toLowerCase();
     const all = data.recent_scans || [];

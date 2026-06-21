@@ -1,0 +1,194 @@
+{
+  "timestamp": "2026-06-21T03:27:58.474Z",
+  "version": "dev",
+  "platform": "linux",
+  "nodeVersion": "v24.16.0",
+  "AtheonEnhanced": {
+    "binary": "/tmp/atheon",
+    "buildSize": 9258379
+  },
+  "scans": [
+    {
+      "label": "axios",
+      "path": "/tmp/scan-targets/axios",
+      "filesScanned": 86,
+      "sizeMb": 3,
+      "findingsCount": 0,
+      "findingsByCategory": {},
+      "severityCounts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": [],
+      "scanDurationMs": 6245,
+      "listDurationMs": 23,
+      "exitCode": 1,
+      "error": "Command failed: /tmp/atheon --json \"/tmp/scan-targets/axios\" "
+    },
+    {
+      "label": "express",
+      "path": "/tmp/scan-targets/express",
+      "filesScanned": 11,
+      "sizeMb": 1,
+      "findingsCount": 0,
+      "findingsByCategory": {},
+      "severityCounts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": [],
+      "scanDurationMs": 490,
+      "listDurationMs": 23,
+      "exitCode": 1,
+      "error": "Command failed: /tmp/atheon --json \"/tmp/scan-targets/express\" "
+    },
+    {
+      "label": "lodash",
+      "path": "/tmp/scan-targets/lodash",
+      "filesScanned": 1052,
+      "sizeMb": 6,
+      "findingsCount": 0,
+      "findingsByCategory": {},
+      "severityCounts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": [],
+      "scanDurationMs": 8725,
+      "listDurationMs": 22,
+      "exitCode": 1,
+      "error": "Command failed: /tmp/atheon --json \"/tmp/scan-targets/lodash\" "
+    },
+    {
+      "label": "react",
+      "path": "/tmp/scan-targets/react",
+      "filesScanned": 28,
+      "sizeMb": 1,
+      "findingsCount": 0,
+      "findingsByCategory": {},
+      "severityCounts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": [],
+      "scanDurationMs": 862,
+      "listDurationMs": 23,
+      "exitCode": 1,
+      "error": "Command failed: /tmp/atheon --json \"/tmp/scan-targets/react\" "
+    },
+    {
+      "label": "typescript",
+      "path": "/tmp/scan-targets/typescript",
+      "filesScanned": 141,
+      "sizeMb": 28,
+      "findingsCount": 0,
+      "findingsByCategory": {},
+      "severityCounts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": [],
+      "scanDurationMs": 60004,
+      "listDurationMs": 26,
+      "exitCode": null,
+      "error": "spawnSync /bin/sh ETIMEDOUT"
+    },
+    {
+      "label": "vue",
+      "path": "/tmp/scan-targets/vue",
+      "filesScanned": 38,
+      "sizeMb": 4,
+      "findingsCount": 0,
+      "findingsByCategory": {},
+      "severityCounts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": [],
+      "scanDurationMs": 9978,
+      "listDurationMs": 29,
+      "exitCode": 1,
+      "error": "Command failed: /tmp/atheon --json \"/tmp/scan-targets/vue\" "
+    }
+  ],
+  "summary": {
+    "totalScans": 6,
+    "totalFindings": 0,
+    "totalFilesScanned": 1356,
+    "categoriesCovered": [],
+    "patternsUsed": 175,
+    "patternsEnabled": 175,
+    "patternsDisabled": 1,
+    "allCategories": [
+      "accessibility",
+      "ai-detection",
+      "api-integration",
+      "cloud-native",
+      "code-quality",
+      "data-visualization",
+      "devops",
+      "finance",
+      "django",
+      "nodejs",
+      "react",
+      "healthcare",
+      "performance",
+      "pii",
+      "pwa",
+      "secrets",
+      "security-hardening",
+      "web-development",
+      "web-security"
+    ]
+  },
+  "performance": {
+    "totalScanTimeMs": 86304,
+    "avgScanTimeMs": 14384,
+    "fastestScanMs": 490,
+    "slowestScanMs": 60004,
+    "throughputFilesPerSec": 15.7
+  },
+  "findings": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byCategory": {}
+  },
+  "issues": [],
+  "good": [
+    "Scanned 6 packages with 175 enabled patterns across 0 categories",
+    "Throughput: 15.7 files/sec average",
+    "Binary size only 8.8MB — lightweight and portable",
+    "All 19 categories covered: accessibility, ai-detection, api-integration, cloud-native, code-quality, data-visualization, devops, finance, django, nodejs, react, healthcare, performance, pii, pwa, secrets, security-hardening, web-development, web-security",
+    "JSON output format is machine-parseable and suitable for CI integration",
+    "Supports --categories filter for targeted scans (reduces noise)",
+    "Supports --file for single-file targeted scans",
+    "List/enable/disable commands for pattern management",
+    "Covers 19 security/quality categories from secrets to accessibility to AI-detection"
+  ],
+  "limitations": [
+    "No streaming/chunked output for very large directories (>100k files) — single JSON array must fully materialize",
+    "No progress indicator during scans — users get no feedback on large targets",
+    "No ignore/exclude patterns (e.g., .gitignore-style) — scans everything including node_modules",
+    "No output format besides JSON and human-readable list — no SARIF/junit native support",
+    "No multi-threaded/parallel scanning — single-threaded Go implementation",
+    "No incremental/re-scan mode — always full re-scan",
+    "No diff view to compare findings between two scans",
+    "No JSON schema published for output format",
+    "Security findings are pattern-based (regex/matcher) — inherently prone to false positives without source context",
+    "No way to suppress findings per-file or per-pattern (no .atheonignore equivalent)"
+  ]
+}

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useToast } from '../contexts/ToastContext';
 import { Skeleton } from './Skeleton';
+import { getScoreColor, getTierColor } from '../utils/colors';
+import { formatDate } from '../utils/date';
 
 export default function ReportDetailModal({ report, onClose, onCompare }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -46,12 +48,6 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
   // Open-on-GitHub link if name is in owner/repo form
   const looksLikeRepo = typeof name === 'string' && /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(name);
   const githubUrl = looksLikeRepo ? `https://github.com/${name}` : null;
-
-  const formatDate = (s) => {
-    if (!s) return '—';
-    const d = new Date(s);
-    return isNaN(d.getTime()) ? s : d.toLocaleString();
-  };
 
   const handleCopy = async () => {
     setCopying(true);
@@ -237,26 +233,42 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
           {activeTab === 'findings' && (
             <div className="space-y-4">
               {findings.length > 0 ? (
-                findings.map((finding, idx) => (
-                  <div key={idx} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getSeverityColor(finding.severity || 'low')}`}>
-                        {(finding.severity || 'info').toUpperCase()}
-                      </span>
-                      <span className="text-xs text-gray-400 capitalize">{finding.type || 'finding'}</span>
-                    </div>
-                    <h4 className="text-white font-medium">{finding.description || finding.message || 'Finding'}</h4>
-                    {finding.file && (
-                      <div className="text-sm text-gray-400 mt-2">
-                        <div>File: {finding.file}</div>
-                        {finding.line && <div>Line: {finding.line}</div>}
+                findings.map((finding, idx) => {
+                  const sev = (finding.severity || 'info').toLowerCase()
+                  const label = finding.pattern || finding.description || finding.message || 'Unknown finding'
+                  return (
+                    <div key={idx} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${getSeverityColor(sev)}`}>
+                          {sev}
+                        </span>
+                        {finding.confidence != null && (
+                          <span className="text-xs text-gray-500">
+                            conf {Math.round((finding.confidence) * 100)}%
+                          </span>
+                        )}
+                        {finding.type && (
+                          <span className="text-xs text-gray-400 capitalize">/{finding.type}</span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))
+                      <h4 className="text-white font-medium">{label}</h4>
+                      <div className="text-sm text-gray-400 mt-2 space-y-1">
+                        {finding.file && (
+                          <div className="flex items-center gap-1">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <span className="font-mono text-xs">{finding.file}</span>
+                            {finding.line && <span className="text-gray-500 text-xs">:{finding.line}</span>}
+                          </div>
+                        )}
+                        {finding.category && <div>Category: {finding.category}</div>}
+                        {finding.rule && <div className="font-mono text-xs text-gray-500">Rule: {finding.rule}</div>}
+                      </div>
+                    </div>
+                  )
+                })
               ) : (
                 <div className="bg-gray-900 rounded-lg p-6 text-center text-gray-400">
-                  No file-level findings are stored with this scan. The tier and quality score summarize the analysis; per-file detail is collected only for newly submitted repositories.
+                  No security findings were recorded for this scan. The tier and quality score summarize the overall analysis.
                 </div>
               )}
             </div>
@@ -455,23 +467,6 @@ function Row({ label, value, accent }) {
       <dd className={accent || 'text-white'}>{value}</dd>
     </div>
   );
-}
-
-function getScoreColor(score) {
-  if (score >= 90) return 'text-green-500';
-  if (score >= 75) return 'text-blue-500';
-  if (score >= 60) return 'text-yellow-500';
-  return 'text-red-500';
-}
-
-function getTierColor(tier) {
-  switch (tier) {
-    case 'A': return 'bg-green-500 text-white';
-    case 'B': return 'bg-blue-500 text-white';
-    case 'C': return 'bg-yellow-500 text-white';
-    case 'D': return 'bg-orange-500 text-white';
-    default: return 'bg-red-500 text-white';
-  }
 }
 
 function getSeverityColor(severity) {

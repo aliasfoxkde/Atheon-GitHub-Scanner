@@ -1,38 +1,59 @@
 // Service to load REAL scanner data
 // Uses embedded data as primary source (always available in deployment)
-// Falls back to API if available
 
 const WORKER_API_URL = 'https://atheon-scanner-api.workers.dev';
 const EMBEDDED_DATA_URL = '/embedded-data.json';
 
+// Module-level cache with TTL
+let _cache = null;
+let _cacheTime = 0;
+const CACHE_TTL_MS = 60_000; // 60 seconds
+
+/** Load with in-module cache and 10s timeout; respects external abort signal */
+async function fetchWithCache(url, ttlMs, signal) {
+  const now = Date.now();
+  if (_cache && (now - _cacheTime) < ttlMs) return _cache;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  // Merge external signal so callers can cancel
+  const combinedSignal = signal
+    ? AbortSignal.any([controller.signal, signal])
+    : controller.signal;
+  try {
+    const res = await fetch(url, { signal: combinedSignal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    _cache = await res.json();
+    _cacheTime = now;
+    return _cache;
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 /**
  * Load real scanner statistics from embedded data
- * This ensures the deployed webapp ALWAYS shows real data
+ * Uses 60s in-module cache to avoid redundant re-fetches
+ * @param {AbortSignal} [signal] - optional abort signal from caller
  */
-export const loadRealScannerData = async () => {
+export const loadRealScannerData = async (signal) => {
   try {
-    console.log('🔄 Loading embedded scanner data...');
-    const response = await fetch(EMBEDDED_DATA_URL);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log(`✅ Loaded ${data.total_repositories.toLocaleString()} real packages from embedded data`);
+    const data = await fetchWithCache(EMBEDDED_DATA_URL, CACHE_TTL_MS, signal);
     return data;
   } catch (error) {
-    console.error('❌ Failed to load embedded data:', error);
+    if (error.name === 'AbortError') throw error;
     return getFallbackData();
   }
 };
 
 /**
  * Get paginated list of repositories from embedded data
+ * @param {AbortSignal} [signal] - optional abort signal
  */
-export const getAllRepositories = async (page = 1, limit = 50, language = null, tier = null) => {
+export const getAllRepositories = async (page = 1, limit = 50, language = null, tier = null, signal) => {
   try {
-    const data = await loadRealScannerData();
+    const data = await loadRealScannerData(signal); // uses cached fetch, respects signal
     let repos = data.recent_scans || [];
 
     if (language) {
@@ -45,17 +66,16 @@ export const getAllRepositories = async (page = 1, limit = 50, language = null, 
     const total = repos.length;
     const pages = Math.ceil(total / limit);
     const start = (page - 1) * limit;
-    const end = start + limit;
 
     return {
-      repositories: repos.slice(start, end),
+      repositories: repos.slice(start, start + limit),
       total,
       page,
       limit,
       pages,
     };
   } catch (error) {
-    console.error('❌ Failed to get repositories:', error);
+    if (error.name === 'AbortError') throw error;
     return { repositories: [], total: 0, page: 1, limit, pages: 0 };
   }
 };
@@ -112,10 +132,17 @@ export const getPatternData = async () => {
 
 /**
  * Check API health (always returns healthy when embedded data is loaded)
+ * @param {AbortSignal} [signal] - optional abort signal
  */
-export const checkApiHealth = async () => {
+export const checkApiHealth = async (signal) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  const combinedSignal = signal
+    ? AbortSignal.any([controller.signal, signal])
+    : controller.signal;
   try {
-    const response = await fetch(EMBEDDED_DATA_URL);
+    const response = await fetch(EMBEDDED_DATA_URL, { signal: combinedSignal });
+    clearTimeout(timer);
     if (response.ok) {
       const data = await response.json();
       return {
@@ -128,6 +155,8 @@ export const checkApiHealth = async () => {
     }
     throw new Error('Not OK');
   } catch (error) {
+    clearTimeout(timer);
+    if (error.name === 'AbortError') throw error;
     return {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -149,7 +178,10 @@ export const refreshDataCache = async () => {
  */
 export const isApiAvailable = async () => {
   try {
-    const response = await fetch(EMBEDDED_DATA_URL, { method: 'HEAD' });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(EMBEDDED_DATA_URL, { method: 'HEAD', signal: controller.signal });
+    clearTimeout(timer);
     return response.ok;
   } catch {
     return false;

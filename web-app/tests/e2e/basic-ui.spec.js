@@ -16,7 +16,7 @@ test.describe('Atheon GitHub Scanner - Basic UI Validation', () => {
     await expect(heading.first()).toBeVisible();
 
     // Check if stats are displayed
-    await expect(page.locator('text=Repositories').first()).toBeVisible();
+    await expect(page.locator('text=Packages Analyzed').first()).toBeVisible();
     await expect(page.locator('text=Total Scans').first()).toBeVisible();
 
     // Wait for data to load

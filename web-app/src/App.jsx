@@ -8,6 +8,8 @@ import ApiDocs from './pages/ApiDocs'
 import Pipeline from './pages/Pipeline'
 import Trending from './pages/Trending'
 import Settings from './pages/Settings'
+import ReportDetail from './pages/ReportDetail'
+import About from './pages/About'
 import NotFound from './pages/NotFound'
 import ErrorBoundary from './components/ErrorBoundary'
 import ToastContainer from './components/Toast'
@@ -113,6 +115,8 @@ function App() {
           <Route path="/pipeline" element={<Pipeline />} />
           <Route path="/trending" element={<Trending />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/reports/:id" element={<ReportDetail />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </ErrorBoundary>

@@ -8,8 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/**/*.svg', 'icons/**/*.png', 'favicon.ico'],
+      includeAssets: ['icons/**/*.svg', 'icons/**/*.png'],
       manifest: {
+        lang: 'en',
+        dir: 'ltr',
         name: 'Atheon GitHub Scanner',
         short_name: 'Atheon Scanner',
         description: 'Automated GitHub repository scanning and quality analysis',
@@ -52,21 +54,26 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,json}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        maximumFileSizeToCacheInBytes: 500 * 1024, // 500 KB - prevents 2.4MB embedded-data.json from being precached
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/sw\.js$/,
+          /^\/workbox-/,
+        ],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/atheon-scanner\.pages\.dev\/api\/.*/i,
+            // Cache embedded-data.json with NetworkFirst, short TTL
+            urlPattern: /\/embedded-data\.json$/,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'api-cache',
+              cacheName: 'scanner-data-cache',
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 5, // 5 minutes
               },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
+              cacheableResponse: { statuses: [200] },
+            },
           },
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
@@ -75,13 +82,13 @@ export default defineConfig({
               cacheName: 'image-cache',
               expiration: {
                 maxEntries: 60,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
-            }
-          }
-        ]
-      }
-    })
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+        ],
+      },
+    }),
   ],
   server: {
     port: 3000,
@@ -96,7 +103,6 @@ export default defineConfig({
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'charts': ['recharts'],
-          'utils': ['zustand', 'axios']
         }
       }
     },

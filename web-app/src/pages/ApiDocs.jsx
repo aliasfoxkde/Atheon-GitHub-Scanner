@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getAllRepositories } from '../services/realScannerData'
 
 export default function ApiDocs() {
   const [activeEndpoint, setActiveEndpoint] = useState(null)
@@ -181,20 +182,90 @@ export default function ApiDocs() {
     setResponse(null)
 
     try {
-      // Simulate API call for demo
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const start = Date.now()
+      let data = null
 
+      if (endpoint.method === 'GET' && endpoint.path === '/api/reports') {
+        const repos = await getAllRepositories()
+        data = {
+          success: true,
+          reports: repos.slice(0, 20).map((r) => ({
+            id: r.id,
+            repo_name: r.name,
+            category: r.category,
+            language: r.language,
+            stars: r.stars,
+            quality_score: r.quality_score,
+            tier: r.tier,
+            total_findings: r.total_findings,
+            scan_date: r.scan_date,
+          })),
+          total: repos.length,
+          page: 1,
+          perPage: 20,
+        }
+      } else if (endpoint.path === '/api/stats') {
+        const repos = await getAllRepositories()
+        const tiers = { A: 0, B: 0, C: 0, D: 0, F: 0 }
+        const langCounts = {}
+        repos.forEach((r) => {
+          tiers[r.tier] = (tiers[r.tier] || 0) + 1
+          langCounts[r.language] = (langCounts[r.language] || 0) + 1
+        })
+        const avgScore = repos.length ? repos.reduce((s, r) => s + (r.quality_score || 0), 0) / repos.length : 0
+        data = {
+          success: true,
+          stats: {
+            total_repositories: repos.length,
+            total_scans: repos.length,
+            average_quality_score: Math.round(avgScore * 10) / 10,
+            tier_distribution: tiers,
+            top_languages: Object.entries(langCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([language, count]) => ({ language, count })),
+          },
+        }
+      } else if (endpoint.path === '/api/trending') {
+        const repos = await getAllRepositories()
+        const trending = [...repos].sort((a, b) => (b.stars || 0) - (a.stars || 0)).slice(0, 10)
+        data = {
+          success: true,
+          trending: trending.map((r) => ({
+            name: r.name,
+            stars: r.stars,
+            language: r.language,
+            description: r.description,
+            today_stars: Math.floor((r.stars || 0) * 0.001),
+          })),
+        }
+      } else if (endpoint.path === '/api/scan') {
+        // POST /api/scan — return a simulated queued response
+        data = {
+          success: true,
+          result: {
+            repository: { name: 'facebook/react', owner: 'facebook', stars: 220000, language: 'JavaScript' },
+            qualityScore: 85,
+            tier: 'B',
+            findings: [{ type: 'security', severity: 'high', description: 'Potential secret detected in configuration file' }],
+          },
+          scanId: `scan_${Date.now().toString(36)}`,
+        }
+      } else {
+        data = JSON.parse(endpoint.response)
+      }
+
+      const duration = Date.now() - start
       setResponse({
         success: true,
         status: 200,
-        data: JSON.parse(endpoint.response),
-        timestamp: new Date().toISOString()
+        data,
+        timestamp: new Date().toISOString(),
+        duration,
       })
     } catch (error) {
       setResponse({
         success: false,
-        error: 'Failed to execute request',
-        details: error.message
+        error: 'Request failed',
+        details: error.message,
+        timestamp: new Date().toISOString(),
       })
     } finally {
       setLoading(false)
@@ -303,7 +374,7 @@ export default function ApiDocs() {
                     {loading ? 'Testing...' : 'Test Endpoint'}
                   </button>
                   <span className="text-gray-400 text-sm">
-                    Live testing with simulated response
+                    Live testing against embedded data
                   </span>
                 </div>
 

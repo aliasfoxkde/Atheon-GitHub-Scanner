@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { getScoreColor, getTierColor } from '../utils/colors'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { getAllRepositories, loadRealScannerData } from '../services/realScannerData'
 import ReportDetailModal from '../components/ReportDetailModal'
 import CompareModal from '../components/CompareModal'
@@ -7,18 +8,24 @@ import { SkeletonTable } from '../components/Skeleton'
 import { useToast } from '../contexts/ToastContext'
 import { useSettings } from '../contexts/SettingsContext'
 
-const TIER_ORDER = { A: 1, B: 2, C: 3, D: 4, F: 5 };
+// Tier score map — kept inline to avoid minifier TDZ issues with module-level const
+const TIER_SCORE = { A: 1, B: 2, C: 3, D: 4, F: 5 };
 
 export default function Reports() {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selectedReport, setSelectedReport] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [dataSource, setDataSource] = useState('unknown')
-  const [selectedForCompare, setSelectedForCompare] = useState([])
+  // Initialize compare selections from URL params ("compare=id1,id2,id3")
+  const [selectedForCompare, setSelectedForCompare] = useState(() => {
+    const p = searchParams.get('compare')
+    return p ? p.split(',').filter(Boolean) : []
+  })
   const [showCompare, setShowCompare] = useState(false)
-  const [searchParams, setSearchParams] = useSearchParams()
   const toast = useToast()
   const { settings } = useSettings()
 
@@ -38,19 +45,31 @@ export default function Reports() {
     pages: 0,
   })
 
+  // Abort controller ref for cancellable fetches
+  const abortRef = useRef(null)
+  // Debounce ref for search input
+  const searchDebounceRef = useRef(null)
+
   useEffect(() => {
-    fetchReports()
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    fetchReports(controller.signal)
+    return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, pagination.page, pagination.perPage, settings.defaultPageSize])
 
   // Load available filter options from real data
   useEffect(() => {
+    let cancelled = false
     loadRealScannerData().then((data) => {
+      if (cancelled) return
       const langs = Object.keys(data.language_distribution || {}).sort()
       setAvailableLanguages(langs)
-      const tiers = Object.keys(data.tier_distribution || {}).sort((a, b) => TIER_ORDER[a] - TIER_ORDER[b])
+      const tiers = Object.keys(data.tier_distribution || {}).sort((a, b) => (TIER_SCORE[a] ?? 9) - (TIER_SCORE[b] ?? 9))
       setAvailableTiers(tiers.length ? tiers : ['A', 'B', 'C', 'D', 'F'])
     }).catch(() => {})
+    return () => { cancelled = true }
   }, [])
 
   // Sync defaultPageSize changes into pagination
@@ -58,7 +77,7 @@ export default function Reports() {
     setPagination((p) => ({ ...p, perPage: settings.defaultPageSize, page: 1 }))
   }, [settings.defaultPageSize])
 
-  const fetchReports = async () => {
+  const fetchReports = async (signal) => {
     try {
       setLoading(true)
       setError(null)
@@ -66,14 +85,20 @@ export default function Reports() {
         pagination.page,
         pagination.perPage,
         filters.language,
-        filters.tier
+        filters.tier,
+        signal
       )
 
       if (response && response.repositories) {
         let repos = response.repositories
         if (filters.search) {
           const q = filters.search.toLowerCase()
-          repos = repos.filter((r) => (r.name || '').toLowerCase().includes(q))
+          repos = repos.filter((r) =>
+            (r.name || '').toLowerCase().includes(q) ||
+            (r.description || '').toLowerCase().includes(q) ||
+            (r.language || '').toLowerCase().includes(q) ||
+            ((r.topics || []).some((t) => t.toLowerCase().includes(q)))
+          )
         }
         if (filters.minScore) {
           const min = Number(filters.minScore)
@@ -90,7 +115,7 @@ export default function Reports() {
         throw new Error('Invalid response format')
       }
     } catch (err) {
-      console.error(err)
+      if (err.name === 'AbortError') return
       setError(err.message)
       setDataSource('error')
       toast.error('Failed to load reports')
@@ -106,7 +131,7 @@ export default function Reports() {
     return [...reports].sort((a, b) => {
       const av = a[column]
       const bv = b[column]
-      if (column === 'tier') return mult * ((TIER_ORDER[av] || 9) - (TIER_ORDER[bv] || 9))
+      if (column === 'tier') return mult * ((TIER_SCORE[av] ?? 9) - (TIER_SCORE[bv] ?? 9))
       if (typeof av === 'number' && typeof bv === 'number') return mult * (av - bv)
       return mult * String(av || '').localeCompare(String(bv || ''))
     })
@@ -114,7 +139,7 @@ export default function Reports() {
 
   // Compute table column count based on active settings
   const tableColCount = useMemo(() => {
-    return 5 + (settings.showStars !== false ? 1 : 0) + (settings.showDeps !== false ? 1 : 0) + (settings.showFiles !== false ? 1 : 0)
+    return 5 + (settings.showStars !== false ? 1 : 0) + (settings.showDeps !== false ? 1 : 0) + (settings.showFiles !== false ? 1 : 0) + 1
   }, [settings.showStars, settings.showDeps, settings.showFiles])
 
   const handleSort = (column) => {
@@ -130,6 +155,14 @@ export default function Reports() {
     setSearchParams(next, { replace: true })
   }
 
+  // Debounced search handler — avoids hammering on every keystroke
+  const handleSearchChange = useCallback((value) => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      handleFilterChange('search', value)
+    }, 300)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const clearFilters = () => {
     setFilters({ language: '', tier: '', minScore: '', search: '' })
     setPagination((p) => ({ ...p, page: 1 }))
@@ -138,19 +171,48 @@ export default function Reports() {
   }
 
   const handleReportClick = (report) => {
-    setSelectedReport(report)
-    setShowModal(true)
+    navigate(`/reports/${encodeURIComponent(report.id || report.name)}`)
+  }
+
+  // Sync compare selections to URL params
+  const syncCompareToUrl = (sel) => {
+    const next = new URLSearchParams(searchParams)
+    if (sel.length > 0) next.set('compare', sel.join(','))
+    else next.delete('compare')
+    setSearchParams(next, { replace: true })
   }
 
   const toggleCompareSelection = (id) => {
     setSelectedForCompare((sel) => {
-      if (sel.includes(id)) return sel.filter((x) => x !== id)
-      if (sel.length >= 5) {
-        toast.warning('Compare up to 5 at once')
-        return sel
-      }
-      return [...sel, id]
+      const next = sel.includes(id) ? sel.filter((x) => x !== id) : sel.length >= 5 ? (toast.warning('Compare up to 5 at once'), sel) : [...sel, id]
+      syncCompareToUrl(next)
+      return next
     })
+  }
+
+  const clearCompareSelection = () => {
+    setSelectedForCompare([])
+    syncCompareToUrl([])
+    toast.info('Selection cleared')
+  }
+
+  const selectAllOnPage = () => {
+    const pageIds = sortedReports.map((r) => r.id)
+    const allSelected = pageIds.every((id) => selectedForCompare.includes(id))
+    if (allSelected) {
+      // Deselect all on this page
+      const next = selectedForCompare.filter((id) => !pageIds.includes(id))
+      setSelectedForCompare(next)
+      syncCompareToUrl(next)
+    } else {
+      // Select all on this page (up to 5 total)
+      const remaining = 5 - selectedForCompare.length
+      const toAdd = pageIds.filter((id) => !selectedForCompare.includes(id)).slice(0, remaining)
+      const next = [...selectedForCompare, ...toAdd]
+      if (toAdd.length < pageIds.length) toast.warning('Compare limited to 5 at once')
+      setSelectedForCompare(next)
+      syncCompareToUrl(next)
+    }
   }
 
   const exportData = (format) => {
@@ -180,13 +242,21 @@ export default function Reports() {
             {dataSource === 'real_api' ? `Real data from ${pagination.total.toLocaleString()} analyzed packages` : 'Loading repository data…'}
           </p>
         </div>
-        {selectedForCompare.length > 1 && (
-          <button
-            onClick={() => setShowCompare(true)}
-            className="self-start sm:self-auto px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium"
-          >
-            Compare ({selectedForCompare.length})
-          </button>
+        {selectedForCompare.length > 0 && (
+          <>
+            <button
+              onClick={() => setShowCompare(true)}
+              className="self-start sm:self-auto px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium"
+            >
+              Compare ({selectedForCompare.length})
+            </button>
+            <button
+              onClick={clearCompareSelection}
+              className="self-start sm:self-auto px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
+            >
+              Clear selection
+            </button>
+          </>
         )}
       </div>
 
@@ -212,19 +282,21 @@ export default function Reports() {
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <div className="lg:col-span-2">
-            <label className="block text-gray-400 text-xs mb-1">Search</label>
+            <label htmlFor="reports-search" className="block text-gray-400 text-xs mb-1">Search</label>
             <input
+              id="reports-search"
               type="search"
               data-search
               value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search packages…"
               className="w-full bg-gray-700 text-white rounded px-3 py-2 border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
             />
           </div>
           <div>
-            <label className="block text-gray-400 text-xs mb-1">Language</label>
+            <label htmlFor="reports-language" className="block text-gray-400 text-xs mb-1">Language</label>
             <select
+              id="reports-language"
               value={filters.language}
               onChange={(e) => handleFilterChange('language', e.target.value)}
               className="w-full bg-gray-700 text-white rounded px-3 py-2 border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
@@ -236,8 +308,9 @@ export default function Reports() {
             </select>
           </div>
           <div>
-            <label className="block text-gray-400 text-xs mb-1">Tier</label>
+            <label htmlFor="reports-tier" className="block text-gray-400 text-xs mb-1">Tier</label>
             <select
+              id="reports-tier"
               value={filters.tier}
               onChange={(e) => handleFilterChange('tier', e.target.value)}
               className="w-full bg-gray-700 text-white rounded px-3 py-2 border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
@@ -249,8 +322,9 @@ export default function Reports() {
             </select>
           </div>
           <div>
-            <label className="block text-gray-400 text-xs mb-1">Min score</label>
+            <label htmlFor="reports-minscore" className="block text-gray-400 text-xs mb-1">Min score</label>
             <input
+              id="reports-minscore"
               type="number"
               min="0"
               max="100"
@@ -277,9 +351,20 @@ export default function Reports() {
           <button onClick={() => exportData('json')} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors">
             Export JSON
           </button>
-          <span className="text-gray-500 text-xs ml-auto">
-            {reports.length} on this page · {pagination.total.toLocaleString()} total
-          </span>
+          <div className="flex items-center gap-3 ml-auto">
+            <label htmlFor="rows-per-page" className="text-gray-400 text-xs whitespace-nowrap">Rows:</label>
+            <select
+              id="rows-per-page"
+              value={pagination.perPage}
+              onChange={(e) => setPagination((p) => ({ ...p, perPage: Number(e.target.value), page: 1 }))}
+              className="bg-gray-700 text-white text-xs rounded px-2 py-1 border border-gray-600"
+            >
+              {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <span className="text-gray-400 text-xs">
+              {reports.length} on page · {pagination.total.toLocaleString()} total
+            </span>
+          </div>
         </div>
       </div>
 
@@ -294,20 +379,28 @@ export default function Reports() {
           <table className="w-full">
             <thead className="bg-gray-900">
               <tr>
-                <th className="px-3 py-3 w-8">
-                  <span className="sr-only">Select</span>
+                <th scope="col" className="px-3 py-3 w-8">
+                  <input
+                    type="checkbox"
+                    onChange={selectAllOnPage}
+                    checked={sortedReports.length > 0 && sortedReports.every((r) => selectedForCompare.includes(r.id))}
+                    aria-label="Select all on page"
+                    className="rounded border-gray-600 bg-gray-700 text-purple-500"
+                  />
                 </th>
                 {[
                   { k: 'name', l: 'Package' },
                   { k: 'language', l: 'Language' },
                   { k: 'quality_score', l: 'Score' },
                   { k: 'tier', l: 'Tier' },
-                  ...(settings.showStars !== false ? [{ k: 'stars', l: 'Stars' }] : []),
+                  ...(settings.showStars !== false ? [{ k: 'stars', l: '⭐' }] : []),
                   ...(settings.showDeps !== false ? [{ k: 'total_dependencies', l: 'Deps' }] : []),
                   ...(settings.showFiles !== false ? [{ k: 'total_files', l: 'Files' }] : []),
+                  { k: 'forks', l: 'Forks' },
                 ].map((c) => (
                   <th
                     key={c.k}
+                    scope="col"
                     onClick={() => handleSort(c.k)}
                     className="px-3 py-3 text-left text-gray-400 text-xs font-medium cursor-pointer hover:text-white select-none whitespace-nowrap"
                   >
@@ -342,6 +435,7 @@ export default function Reports() {
                           checked={isSelected}
                           onChange={(e) => { e.stopPropagation(); toggleCompareSelection(report.id) }}
                           onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select ${report.name} for comparison`}
                           className="rounded border-gray-600 bg-gray-700 text-purple-500"
                         />
                       </td>
@@ -377,6 +471,9 @@ export default function Reports() {
                           {report.total_files > 0 ? report.total_files.toLocaleString() : '—'}
                         </td>
                       )}
+                      <td onClick={() => handleReportClick(report)} className="px-3 py-3 text-gray-300 text-sm cursor-pointer">
+                        {report.forks > 0 ? report.forks.toLocaleString() : '—'}
+                      </td>
                     </tr>
                   )
                 })
@@ -390,6 +487,14 @@ export default function Reports() {
                 Showing {((pagination.page - 1) * pagination.perPage) + 1}–{Math.min(pagination.page * pagination.perPage, pagination.total)} of {pagination.total.toLocaleString()}
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPagination((p) => ({ ...p, page: 1 }))}
+                  disabled={pagination.page === 1}
+                  className="px-2 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs transition-colors"
+                  aria-label="First page"
+                >
+                  «
+                </button>
                 <button
                   onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
                   disabled={pagination.page === 1}
@@ -406,6 +511,14 @@ export default function Reports() {
                   className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
                 >
                   Next
+                </button>
+                <button
+                  onClick={() => setPagination((p) => ({ ...p, page: p.pages }))}
+                  disabled={pagination.page === pagination.pages}
+                  className="px-2 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs transition-colors"
+                  aria-label="Last page"
+                >
+                  »
                 </button>
               </div>
             </div>
@@ -425,23 +538,6 @@ export default function Reports() {
       )}
     </div>
   )
-}
-
-function getScoreColor(score) {
-  if (score >= 90) return 'text-green-500'
-  if (score >= 75) return 'text-blue-500'
-  if (score >= 60) return 'text-yellow-500'
-  return 'text-red-500'
-}
-
-function getTierColor(tier) {
-  switch (tier) {
-    case 'A': return 'bg-green-500 text-white'
-    case 'B': return 'bg-blue-500 text-white'
-    case 'C': return 'bg-yellow-500 text-white'
-    case 'D': return 'bg-orange-500 text-white'
-    default: return 'bg-red-500 text-white'
-  }
 }
 
 function download(filename, content, type) {

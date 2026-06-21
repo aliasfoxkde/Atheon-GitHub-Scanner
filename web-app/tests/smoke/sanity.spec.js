@@ -30,7 +30,7 @@ test.describe('Smoke Tests - Critical Functionality', () => {
     await page.waitForTimeout(3000); // Allow data to load
 
     // Check for repository count (should show real data)
-    await expect(page.locator('text=Repositories').first()).toBeVisible();
+    await expect(page.locator('text=Packages Analyzed').first()).toBeVisible();
 
     // Check that we have numbers displayed (not loading state)
     const statsCards = page.locator('[class*="bg-gray-800"]');

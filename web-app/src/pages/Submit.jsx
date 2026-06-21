@@ -6,6 +6,7 @@ const RECENT_KEY = 'atheon_recent_submissions';
 
 export default function Submit() {
   const [formData, setFormData] = useState({ type: 'github', url: '', repo: '' });
+  const [touched, setTouched] = useState({ repo: false, url: false });
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
   const [recent, setRecent] = useState([]);
@@ -26,7 +27,26 @@ export default function Submit() {
     try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch {}
   };
 
+  const getFieldError = (field) => {
+    if (field === 'repo') {
+      if (!formData.repo) return 'Repository is required';
+      if (!formData.repo.includes('/')) return 'Must be in the form owner/name (e.g. facebook/react)';
+    }
+    if (field === 'url') {
+      if (!formData.url) return 'URL is required';
+      try { new URL(formData.url); return null; } catch { return 'Please enter a valid URL'; }
+    }
+    return null;
+  };
+
+  const isFieldInvalid = (field) => touched[field] && !!getFieldError(field);
+
+  const handleBlur = (field) => {
+    setTouched((t) => ({ ...t, [field]: true }));
+  };
+
   const validate = () => {
+    setTouched({ repo: true, url: true });
     if (formData.type === 'github') {
       if (!formData.repo || !formData.repo.includes('/')) {
         toast.error('Repository must be in the form owner/name (e.g. facebook/react)');
@@ -84,8 +104,8 @@ export default function Submit() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Submission type</label>
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-300 mb-2">Submission type</legend>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { v: 'github', l: 'GitHub repo' },
@@ -94,6 +114,8 @@ export default function Submit() {
                   <button
                     key={o.v}
                     type="button"
+                    role="radio"
+                    aria-checked={formData.type === o.v}
                     onClick={() => setFormData({ ...formData, type: o.v })}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       formData.type === o.v
@@ -105,29 +127,43 @@ export default function Submit() {
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             {formData.type === 'github' ? (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Repository (owner/name)</label>
+                <label htmlFor="submit-repo" className="block text-sm font-medium text-gray-300 mb-2">Repository (owner/name)</label>
                 <input
+                  id="submit-repo"
                   type="text"
                   value={formData.repo}
                   onChange={(e) => setFormData({ ...formData, repo: e.target.value })}
+                  onBlur={() => handleBlur('repo')}
+                  aria-invalid={isFieldInvalid('repo')}
+                  aria-describedby={isFieldInvalid('repo') ? 'repo-error' : undefined}
                   placeholder="facebook/react"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full bg-gray-900 border rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isFieldInvalid('repo') ? 'border-red-500' : 'border-gray-700'}`}
                 />
+                {isFieldInvalid('repo') && (
+                  <p id="repo-error" className="mt-1 text-xs text-red-400" role="alert">{getFieldError('repo')}</p>
+                )}
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Repository URL</label>
+                <label htmlFor="submit-url" className="block text-sm font-medium text-gray-300 mb-2">Repository URL</label>
                 <input
+                  id="submit-url"
                   type="url"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  onBlur={() => handleBlur('url')}
+                  aria-invalid={isFieldInvalid('url')}
+                  aria-describedby={isFieldInvalid('url') ? 'url-error' : undefined}
                   placeholder="https://github.com/facebook/react"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full bg-gray-900 border rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isFieldInvalid('url') ? 'border-red-500' : 'border-gray-700'}`}
                 />
+                {isFieldInvalid('url') && (
+                  <p id="url-error" className="mt-1 text-xs text-red-400" role="alert">{getFieldError('url')}</p>
+                )}
               </div>
             )}
 
@@ -162,7 +198,7 @@ export default function Submit() {
                       className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-sm text-gray-300 flex items-center justify-between gap-2"
                     >
                       <span className="truncate font-mono">{r.target}</span>
-                      <span className="text-xs text-gray-500 flex-shrink-0">{r.type}</span>
+                      <span className="text-xs text-gray-400 flex-shrink-0">{r.type}</span>
                     </button>
                   </li>
                 ))}
