@@ -4,7 +4,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](https://golang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Security](https://img.shields.io/badge/Security-Responsible%20Disclosure-yellow)](SECURITY.md)
+[![Security](https://img.shields.io/badge/Security-Responsible%20Disclosure-yellow)](docs/security/SECURITY.md)
 [![Real Data](https://img.shields.io/badge/Data-162%2B%20Repos-brightgreen)]()
 
 ## 🎯 System Capabilities
@@ -63,7 +63,7 @@ cd web-app && npm run dev
 
 ### Access Points
 
-- **Web Dashboard**: http://localhost:5173 (or deployed: https://e860c003.atheon-scanner.pages.dev)
+- **Web Dashboard**: http://localhost:5173 (or deployed Cloudflare Pages instance)
 - **Real Data API**: http://localhost:8000
 - **API Documentation**: See `/docs/API.md`
 

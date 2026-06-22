@@ -18,6 +18,8 @@ from typing import Dict, List, Any
 import logging
 from functools import lru_cache
 import re
+import signal
+import sys
 
 
 def sanitize_path(path: str, base_dir: str = None) -> str:
@@ -58,6 +60,63 @@ def get_allowed_origins():
 cors = CORS(app, resources={
     r"/api/*": {"origins": get_allowed_origins()}
 })
+
+# Security headers configuration
+SECURITY_HEADERS = {
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin'
+}
+
+# Add HSTS header if HTTPS is detected
+if os.environ.get('HTTPS', '').lower() in ('1', 'true', 'on'):
+    SECURITY_HEADERS['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses"""
+    for header, value in SECURITY_HEADERS.items():
+        response.headers[header] = value
+    return response
+
+# Request validation and logging middleware
+MAX_JSON_BODY_SIZE = 1024 * 1024  # 1MB limit for JSON body
+
+@app.before_request
+def validate_request():
+    """Validate request headers and log request timing"""
+    # Start timing for request logging
+    request._start_time = time.time()
+
+    # Validate Content-Type for JSON requests
+    if request.method in ('POST', 'PUT', 'PATCH'):
+        content_type = request.headers.get('Content-Type', '')
+        if content_type == 'application/json':
+            # Check Content-Length if available
+            content_length = request.content_length
+            if content_length and content_length > MAX_JSON_BODY_SIZE:
+                return jsonify({
+                    'error': 'Request body too large',
+                    'message': f'JSON body exceeds maximum size of {MAX_JSON_BODY_SIZE} bytes'
+                }), 413
+
+@app.after_request
+def log_request(response):
+    """Log request with timing information"""
+    if hasattr(request, '_start_time'):
+        elapsed = time.time() - request._start_time
+        logger.info(f"{request.method} {request.path} - {response.status_code} - {elapsed*1000:.2f}ms")
+    return response
+
+# Graceful shutdown handling
+shutdown_requested = False
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    global shutdown_requested
+    logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+    shutdown_requested = True
 
 # Authentication decorator
 def require_auth(f):
@@ -573,6 +632,11 @@ def get_patterns():
         }), 500
 
 # Serve the web app
+@app.route('/api/health')
+def health():
+    """Simple health check endpoint (no auth required)"""
+    return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+
 @app.route('/')
 def index():
     """Serve the web app"""
@@ -590,8 +654,12 @@ if __name__ == '__main__':
     logger.info(f"Data directories: {[str(d) for d in DATA_DIRS if d.exists()]}")
     logger.info(f"Available JSONL files: {len(get_all_jsonl_files())}")
 
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
     # Calculate initial stats
     initial_stats = calculate_real_stats()
     logger.info(f"Initial stats loaded: {initial_stats['total_repositories']} repositories")
 
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True, threaded=True)

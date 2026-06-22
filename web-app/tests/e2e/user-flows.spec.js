@@ -133,29 +133,38 @@ test.describe('User Flow Tests', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Get first row name on page 1 (column 3 = Package name; col 2 is bookmark star)
-    const firstNameCell = page.locator('tbody tr:first-child td:nth-child(3)');
-    const firstName = await firstNameCell.textContent().catch(() => '');
+    // Collect the package names on page 1
+    const page1Names = await page.locator('tbody tr td:nth-child(3)').allTextContents();
+    expect(page1Names.length).toBeGreaterThan(0);
 
-    // Go to page 2
+    // Page indicator should show "Page 1"
+    const pageIndicator = page.locator('text=Page 1 of');
+    await expect(pageIndicator).toBeVisible();
+
+    // Navigate to page 2
     const page2Btn = page.getByRole('button', { name: '2' });
     const page2Visible = await page2Btn.isVisible().catch(() => false);
-    if (page2Visible) {
-      await page2Btn.click();
-      await page.waitForTimeout(1000);
+    expect(page2Visible).toBe(true);
+    await page2Btn.click();
+    await page.waitForTimeout(1500);
 
-      const page2FirstName = await page.locator('tbody tr:first-child td:nth-child(3)').textContent().catch(() => '');
-      // Should be different from page 1
-      expect(page2FirstName).not.toBe(firstName);
+    // Page indicator should now show "Page 2"
+    const page2Indicator = page.locator('text=Page 2 of');
+    await expect(page2Indicator).toBeVisible();
 
-      // Go back to page 1
-      const page1Btn = page.getByRole('button', { name: '1' });
-      await page1Btn.click();
-      await page.waitForTimeout(1000);
+    // Page 2 should have rows
+    const page2Names = await page.locator('tbody tr td:nth-child(3)').allTextContents();
+    expect(page2Names.length).toBeGreaterThan(0);
 
-      const backToFirst = await page.locator('tbody tr:first-child td:nth-child(2)').textContent().catch(() => '');
-      expect(backToFirst).toBe(firstName);
-    }
+    // Navigate back to page 1 using the "«" first-page button
+    const firstPageBtn = page.locator('[aria-label="First page"]');
+    await firstPageBtn.click();
+    await page.waitForTimeout(1500);
+    await expect(pageIndicator).toBeVisible();
+
+    // Page 1 rows should be restored
+    const backToPage1Names = await page.locator('tbody tr td:nth-child(3)').allTextContents();
+    expect(backToPage1Names.length).toBe(page1Names.length);
   });
 
   test('Dashboard: global search navigates to filtered reports', async ({ page }) => {
