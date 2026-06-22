@@ -46,7 +46,37 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='web-app', static_url_path='')
-CORS(app)
+
+# Configure CORS with specific origins from environment
+def get_allowed_origins():
+    """Get allowed origins from environment variable, comma-separated"""
+    origins_str = os.environ.get('ALLOWED_ORIGINS', '')
+    if origins_str:
+        return [o.strip() for o in origins_str.split(',') if o.strip()]
+    return []  # Empty list means all origins blocked except explicit ones
+
+cors = CORS(app, resources={
+    r"/api/*": {"origins": get_allowed_origins()}
+})
+
+# Authentication decorator
+def require_auth(f):
+    """Require API token for endpoint access"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+        token = auth_header.replace('Bearer ', '').replace('bearer ', '')
+        expected_token = os.environ.get('API_TOKEN', '')
+
+        if not expected_token:
+            # If no token configured, allow access (dev mode)
+            return f(*args, **kwargs)
+
+        if not token or token != expected_token:
+            return jsonify({'error': 'Unauthorized', 'message': 'Valid API token required'}), 401
+
+        return f(*args, **kwargs)
+    return decorated
 
 # Data directories
 DATA_DIRS = [
@@ -249,6 +279,7 @@ def get_fallback_stats() -> Dict[str, Any]:
     }
 
 @app.route('/api/stats', methods=['GET'])
+@require_auth
 def get_stats():
     """Get real statistics from scanner data with caching"""
     try:
@@ -283,6 +314,7 @@ def get_stats():
         }), 500
 
 @app.route('/api/repositories', methods=['GET'])
+@require_auth
 def get_repositories():
     """Get paginated list of real repositories"""
     try:
@@ -356,6 +388,7 @@ def get_repositories():
         }), 500
 
 @app.route('/api/ecosystems', methods=['GET'])
+@require_auth
 def get_ecosystems():
     """Get ecosystem comparison data"""
     try:
@@ -412,6 +445,7 @@ def get_ecosystems():
         }), 500
 
 @app.route('/api/health', methods=['GET'])
+@require_auth
 def health_check():
     """Health check endpoint with data source status"""
     jsonl_files = get_all_jsonl_files()
@@ -446,6 +480,7 @@ def health_check():
     })
 
 @app.route('/api/languages', methods=['GET'])
+@require_auth
 def get_languages():
     """Get language distribution data"""
     try:
@@ -465,6 +500,7 @@ def get_languages():
         }), 500
 
 @app.route('/api/refresh', methods=['POST'])
+@require_auth
 def refresh_cache():
     """Force refresh the statistics cache"""
     try:
@@ -486,6 +522,7 @@ def refresh_cache():
         }), 500
 
 @app.route('/api/patterns', methods=['GET'])
+@require_auth
 def get_patterns():
     """Get pattern analysis insights"""
     try:
