@@ -18,6 +18,7 @@ import logging
 import subprocess
 import tempfile
 import shutil
+import re
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -32,6 +33,11 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+def sanitize_package_name(name: str) -> str:
+    """Remove anything except alphanumeric, dash, underscore, dot, at"""
+    return re.sub(r'[^a-zA-Z0-9._@-]', '', name)
 
 class NpmPackageScanner:
     """High-speed npm package scanner using local installation and analysis"""
@@ -110,14 +116,16 @@ class NpmPackageScanner:
         try:
             logger.info(f"📦 Scanning {package_name}...")
 
+            # Sanitize package name for use in paths
+            safe_package_name = sanitize_package_name(package_name)
             # Create temp directory for this package
-            package_dir = self.temp_dir / package_name.replace('/', '_')
+            package_dir = self.temp_dir / safe_package_name.replace('/', '_')
             package_dir.mkdir(exist_ok=True)
 
-            # Download package using npm
+            # Download package using npm (package_name used as arg, safe_package_name used in path)
             download_cmd = [
                 'npm', 'install', '--prefix', str(package_dir),
-                '--save', '--save-exact', package_name
+                '--save', '--save-exact', safe_package_name
             ]
 
             result = subprocess.run(
