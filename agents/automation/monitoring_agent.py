@@ -461,8 +461,8 @@ class MonitoringAgent:
                         with open(file_path, 'r') as f:
                             json.load(f)
                         valid_files += 1
-                    except:
-                        pass
+                    except (json.JSONDecodeError, IOError):
+                        pass  # Non-critical: file invalid or unreadable, continue
 
             integrity_rate = (valid_files / len(data_files)) * 100
 

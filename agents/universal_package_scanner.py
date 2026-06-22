@@ -498,8 +498,8 @@ class UniversalPackageScanner:
                             try:
                                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                                     total_lines += len(f.readlines())
-                            except:
-                                pass
+                            except OSError:
+                                pass  # Non-critical: file read error, continue
 
             # Git stats
             commit_count = 0
@@ -513,8 +513,8 @@ class UniversalPackageScanner:
                 )
                 if result.returncode == 0:
                     commit_count = int(result.stdout.strip())
-            except:
-                pass
+            except OSError:
+                pass  # Non-critical: git command failed, continue with 0
 
             # Determine primary ecosystem from files
             primary_ecosystem = package_info.get('ecosystem', 'unknown')

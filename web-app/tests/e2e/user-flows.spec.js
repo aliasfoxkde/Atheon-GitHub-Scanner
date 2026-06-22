@@ -133,8 +133,8 @@ test.describe('User Flow Tests', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Get first row name on page 1
-    const firstNameCell = page.locator('tbody tr:first-child td:nth-child(2)');
+    // Get first row name on page 1 (column 3 = Package name; col 2 is bookmark star)
+    const firstNameCell = page.locator('tbody tr:first-child td:nth-child(3)');
     const firstName = await firstNameCell.textContent().catch(() => '');
 
     // Go to page 2
@@ -144,7 +144,7 @@ test.describe('User Flow Tests', () => {
       await page2Btn.click();
       await page.waitForTimeout(1000);
 
-      const page2FirstName = await page.locator('tbody tr:first-child td:nth-child(2)').textContent().catch(() => '');
+      const page2FirstName = await page.locator('tbody tr:first-child td:nth-child(3)').textContent().catch(() => '');
       // Should be different from page 1
       expect(page2FirstName).not.toBe(firstName);
 

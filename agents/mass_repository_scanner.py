@@ -396,8 +396,8 @@ class RealGitHubMassScanner:
                         activity_score += 20  # Recently updated
                     elif days_since_update < 365:
                         activity_score += 10  # Updated within year
-                except:
-                    pass
+                except ValueError:
+                    pass  # Non-critical: date parsing failed, continue
 
             if pushed_at:
                 try:
@@ -408,8 +408,8 @@ class RealGitHubMassScanner:
                         activity_score += 15
                     elif days_since_push < 180:
                         activity_score += 10
-                except:
-                    pass
+                except ValueError:
+                    pass  # Non-critical: date parsing failed, continue
 
             return {
                 'activity_score': activity_score,

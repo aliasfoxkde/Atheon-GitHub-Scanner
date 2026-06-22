@@ -84,8 +84,8 @@ class RubyGemsScanner:
                         gems.add(gem_name)
                         if len(gems) >= count:
                             break
-                except:
-                    continue
+                except requests.exceptions.RequestException:
+                    continue  # Non-critical: API request failed, try next
 
             logger.info(f"Found {len(gems)} gems from RubyGems")
             return list(gems)[:count]
@@ -153,8 +153,8 @@ class RubyGemsScanner:
                         files = list(item.rglob('*'))
                         scan_result['total_files'] += len([f for f in files if f.is_file()])
                         scan_result['total_size_bytes'] += sum(f.stat().st_size for f in files if f.is_file())
-                    except:
-                        pass
+                    except OSError:
+                        pass  # Non-critical: file access error, continue
 
             # Try to get GitHub info
             github_info = self.get_github_info(gem_name)
@@ -168,8 +168,8 @@ class RubyGemsScanner:
             # Clean up
             try:
                 shutil.rmtree(gem_dir)
-            except:
-                pass
+            except OSError:
+                pass  # Non-critical: cleanup failed, continue
 
             return scan_result
 
@@ -201,10 +201,10 @@ class RubyGemsScanner:
                             'full_name': data.get('full_name'),
                             'forks': data.get('forks_count', 0)
                         }
-                except:
-                    continue
+                except requests.exceptions.RequestException:
+                    continue  # Non-critical: API request failed, try next
 
-        except:
+        except requests.exceptions.RequestException:
             return None
 
     def run_scan(self, target_count: int = 100) -> Dict:

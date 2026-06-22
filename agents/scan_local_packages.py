@@ -63,16 +63,16 @@ class LocalPackageScanner:
                                     'homepage': pkg_data.get('homepage'),
                                     'repository': pkg_data.get('repository')
                                 })
-                        except:
-                            pass
+                        except (json.JSONDecodeError, IOError):
+                            pass  # Non-critical: package.json invalid or unreadable
 
                     # Count files and size
                     try:
                         files = list(item.rglob('*'))
                         metadata['total_files'] = len([f for f in files if f.is_file()])
                         metadata['total_size_bytes'] = sum(f.stat().st_size for f in files if f.is_file())
-                    except:
-                        pass
+                    except OSError:
+                        pass  # Non-critical: file access error, continue
 
                     results.append(metadata)
                 except Exception as e:
@@ -113,8 +113,8 @@ class LocalPackageScanner:
                         files = list(item.rglob('*.py'))
                         metadata['total_files'] = len(files)
                         metadata['total_size_bytes'] = sum(f.stat().st_size for f in files if f.is_file())
-                    except:
-                        pass
+                    except OSError:
+                        pass  # Non-critical: file access error, continue
 
                     results.append(metadata)
                 except Exception as e:

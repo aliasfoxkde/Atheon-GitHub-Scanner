@@ -165,8 +165,8 @@ require {module_name} v0.0.0
                                 files = list(module_dir.rglob('*.go'))
                                 scan_result['total_files'] += len(files)
                                 scan_result['total_size_bytes'] += sum(f.stat().st_size for f in files if f.is_file())
-                            except:
-                                pass
+                            except OSError:
+                                pass  # Non-critical: file access error, continue
                             break
 
             # Try to get GitHub info
@@ -181,8 +181,8 @@ require {module_name} v0.0.0
             # Clean up
             try:
                 shutil.rmtree(project_dir)
-            except:
-                pass
+            except OSError:
+                pass  # Non-critical: cleanup failed, continue
 
             return scan_result
 
@@ -213,10 +213,10 @@ require {module_name} v0.0.0
                                 'full_name': data.get('full_name'),
                                 'forks': data.get('forks_count', 0)
                             }
-                    except:
-                        pass
+                    except requests.exceptions.RequestException:
+                        pass  # Non-critical: API request failed, continue
 
-        except:
+        except requests.exceptions.RequestException:
             return None
 
     def run_scan(self, target_count: int = 50) -> Dict:

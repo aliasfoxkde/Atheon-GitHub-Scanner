@@ -3,97 +3,286 @@ import { loadRealScannerData } from '../services/realScannerData'
 import { Skeleton, SkeletonDonut } from '../components/Skeleton'
 import { DonutChart } from '../components/Charts'
 
-const ATHEON_VERSION = 'dev'
+const ATHEON_VERSION = 'v1.0.0'
 const SCAN_CATEGORIES = [
+  // ── 1. Secrets (33) ──────────────────────────────────────────────────────────
   {
-    name: 'secrets',
-    label: 'Secrets Detection',
-    icon: '🔐',
-    color: '#ef4444',
+    name: 'secrets', label: 'Secrets Detection', icon: '🔐', color: '#ef4444',
     patterns: [
-      { name: 'aws-access-key', desc: 'AWS access key ID and secret', severity: 'critical' },
-      { name: 'github-pat', desc: 'GitHub Personal Access Token', severity: 'critical' },
-      { name: 'circleci-token', desc: 'CircleCI API token', severity: 'high' },
-      { name: 'slack-bot-token', desc: 'Slack bot/API token', severity: 'high' },
-      { name: 'stripe-secret-key', desc: 'Stripe API secret key', severity: 'critical' },
-      { name: 'npm-auth-token', desc: 'npm registry authentication token', severity: 'high' },
-      { name: 'docker-hub-token', desc: 'Docker Hub access token', severity: 'high' },
-      { name: 'gcp-api-key', desc: 'Google Cloud API key', severity: 'high' },
-      { name: 'openai-api-key', desc: 'OpenAI API key', severity: 'critical' },
-      { name: 'azure-client-secret', desc: 'Azure client secret', severity: 'critical' },
-      { name: 'kubernetes-service-account-token', desc: 'K8s service account token', severity: 'high' },
-      { name: 'gitlab-ci-token', desc: 'GitLab CI token', severity: 'high' },
-      { name: 'jenkins-crumb', desc: 'Jenkins CSRF crumb token', severity: 'high' },
+      { name: 'aws-access-key',         desc: 'AWS access key ID (AKIA…) and secret',          severity: 'critical' },
+      { name: 'github-pat',              desc: 'GitHub Personal Access Token (PAT)',              severity: 'critical' },
+      { name: 'github-actions-secret',    desc: 'GitHub Actions workflow secret',                  severity: 'critical' },
+      { name: 'circleci-token-v2',        desc: 'CircleCI v2 API token',                          severity: 'critical' },
+      { name: 'circleci-token',           desc: 'CircleCI legacy API token',                      severity: 'critical' },
+      { name: 'slack-bot-token',          desc: 'Slack bot / API token',                          severity: 'critical' },
+      { name: 'stripe-secret-key',         desc: 'Stripe API secret key',                         severity: 'critical' },
+      { name: 'npm-auth-token',           desc: 'npm registry authentication token',              severity: 'critical' },
+      { name: 'docker-hub-token',          desc: 'Docker Hub access token',                        severity: 'critical' },
+      { name: 'docker-auth-config',       desc: 'Docker authentication config file',             severity: 'critical' },
+      { name: 'gcp-api-key',              desc: 'Google Cloud API key',                           severity: 'critical' },
+      { name: 'gcp-oauth-client-id',       desc: 'GCP OAuth client ID',                           severity: 'high' },
+      { name: 'gcp-oauth-client-secret',   desc: 'GCP OAuth client secret',                       severity: 'critical' },
+      { name: 'gcp-service-account-key',   desc: 'GCP service account JSON key',                 severity: 'critical' },
+      { name: 'gcp-service-account-email', desc: 'GCP service account email address',             severity: 'medium' },
+      { name: 'openai-api-key',            desc: 'OpenAI API key',                                severity: 'critical' },
+      { name: 'azure-client-secret',       desc: 'Azure client secret',                           severity: 'critical' },
+      { name: 'azure-managed-identity',     desc: 'Azure managed identity token',                  severity: 'critical' },
+      { name: 'azure-service-principal',   desc: 'Azure service principal credential',            severity: 'critical' },
+      { name: 'azure-storage-key',         desc: 'Azure storage account key',                      severity: 'critical' },
+      { name: 'azure-devops-token',         desc: 'Azure DevOps PAT',                             severity: 'critical' },
+      { name: 'kubernetes-service-account-token', desc: 'Kubernetes service account token',        severity: 'critical' },
+      { name: 'gitlab-ci-token',           desc: 'GitLab CI token',                               severity: 'critical' },
+      { name: 'jenkins-token',             desc: 'Jenkins API / CSRF token',                      severity: 'critical' },
       { name: 'postgres-connection-string', desc: 'PostgreSQL connection string with credentials', severity: 'critical' },
-      { name: 'mysql-connection-string', desc: 'MySQL connection string with credentials', severity: 'critical' },
-      { name: 'redis-connection-string', desc: 'Redis connection string with credentials', severity: 'critical' },
-      { name: 'mongodb-connection-string', desc: 'MongoDB connection string with credentials', severity: 'critical' },
-      { name: 'sqlserver-connection-string', desc: 'SQL Server connection string', severity: 'critical' },
-      { name: 'oracle-connection-string', desc: 'Oracle DB connection string', severity: 'critical' },
-      { name: 'azure-storage-account-key', desc: 'Azure storage account key', severity: 'high' },
-      { name: 'gcp-service-account-key', desc: 'GCP service account JSON key', severity: 'critical' },
-      { name: 'gcp-oauth-client-id', desc: 'GCP OAuth client ID', severity: 'medium' },
-      { name: 'gcp-service-account-email', desc: 'GCP service account email', severity: 'medium' },
-      { name: 'azure-devops-token', desc: 'Azure DevOps PAT', severity: 'critical' },
-      { name: 'azure-managed-identity-token', desc: 'Azure managed identity token', severity: 'high' },
-      { name: 'pypi-upload-token', desc: 'PyPI upload token', severity: 'critical' },
-      { name: 'twilio-account-sid', desc: 'Twilio account SID + auth token', severity: 'high' },
+      { name: 'mysql-connection-string',   desc: 'MySQL connection string with credentials',      severity: 'critical' },
+      { name: 'redis-connection-string',   desc: 'Redis connection string with credentials',      severity: 'critical' },
+      { name: 'mongodb-connection-string', desc: 'MongoDB connection string with credentials',   severity: 'critical' },
+      { name: 'sqlserver-connection-string', desc: 'SQL Server connection string',               severity: 'critical' },
+      { name: 'oracle-connection-string',  desc: 'Oracle DB connection string',                  severity: 'critical' },
+      { name: 'pypi-upload-token',          desc: 'PyPI upload token',                            severity: 'critical' },
+      { name: 'twilio-api-key',            desc: 'Twilio account SID + auth token',              severity: 'critical' },
     ],
   },
+  // ── 2. Code Quality (24) ─────────────────────────────────────────────────────
   {
-    name: 'code-quality',
-    label: 'Code Quality',
-    icon: '📋',
-    color: '#3b82f6',
+    name: 'code-quality', label: 'Code Quality', icon: '📋', color: '#3b82f6',
     patterns: [
-      { name: 'console-log', desc: 'Console.log statement left in code', severity: 'low' },
-      { name: 'debug-statement', desc: 'Debugger breakpoint or statement', severity: 'low' },
-      { name: 'todo-comment', desc: 'TODO/FIXME comment indicating incomplete work', severity: 'low' },
-      { name: 'fixme-comment', desc: 'FIXME comment needing attention', severity: 'low' },
-      { name: 'placeholder-code', desc: 'Placeholder/temporary code stub', severity: 'low' },
-      { name: 'dummy-function', desc: 'Dummy/incomplete function implementation', severity: 'low' },
-      { name: 'unreachable-code', desc: 'Dead code after return/throw/break', severity: 'medium' },
-      { name: 'empty-catch-block', desc: 'Empty catch block silently swallowing errors', severity: 'medium' },
-      { name: 'deprecated-function', desc: 'Usage of deprecated function or API', severity: 'medium' },
-      { name: 'hardcoded-url', desc: 'Hardcoded URL instead of configuration', severity: 'low' },
-      { name: 'temporary-code', desc: 'Temporary/hack code that should be removed', severity: 'medium' },
-      { name: 'todo-stub', desc: 'Incomplete stub function not yet implemented', severity: 'low' },
+      { name: 'console-log',           desc: 'Console.log statement left in production code',     severity: 'warning' },
+      { name: 'debug-statement',        desc: 'Debugger breakpoint or debug statement',           severity: 'warning' },
+      { name: 'todo-comment',           desc: 'TODO/FIXME comment — incomplete work',            severity: 'info' },
+      { name: 'fixme-comment',          desc: 'FIXME comment needing attention',                   severity: 'info' },
+      { name: 'placeholder-code',        desc: 'Placeholder or temporary code stub',                severity: 'info' },
+      { name: 'dummy-function',         desc: 'Dummy or incomplete function implementation',       severity: 'info' },
+      { name: 'unreachable-code',       desc: 'Dead code after return / throw / break',           severity: 'warning' },
+      { name: 'empty-catch-block',      desc: 'Empty catch block silently swallowing errors',     severity: 'warning' },
+      { name: 'deprecated-function',    desc: 'Usage of a deprecated function or API',            severity: 'warning' },
+      { name: 'hardcoded-url',          desc: 'Hardcoded URL instead of configuration',           severity: 'warning' },
+      { name: 'temporary-code',         desc: 'Temporary or hack code that should be removed',    severity: 'info' },
+      { name: 'todo-stub',              desc: 'Incomplete stub function not yet implemented',     severity: 'info' },
+      { name: 'auto-confirm',           desc: 'Automatic confirmation bypassing user interaction', severity: 'warning' },
+      { name: 'bare-exception-block',   desc: 'Bare except: clause catches all exceptions',       severity: 'warning' },
+      { name: 'build-force',            desc: '--force flag in build script overrides safety',    severity: 'warning' },
+      { name: 'cruft',                  desc: 'Cruft / trailing whitespace / formatting debris',  severity: 'info' },
+      { name: 'fake-data',              desc: 'Fake / placeholder data left in source',           severity: 'info' },
+      { name: 'git-clean-force',        desc: 'git clean --force can irreversibly delete files', severity: 'critical' },
+      { name: 'git-force-push',         desc: 'git push --force overwrites remote history',      severity: 'critical' },
+      { name: 'git-hard-reset',         desc: 'git reset --hard discards uncommitted changes',   severity: 'critical' },
+      { name: 'insecure-flag',          desc: 'Insecure CLI flag or runtime flag enabled',       severity: 'warning' },
+      { name: 'mock-stub',              desc: 'Mock / stub left in production code',             severity: 'info' },
+      { name: 'package-manager-force',  desc: 'Package manager --force flag bypasses integrity', severity: 'warning' },
+      { name: 'skip-hooks',             desc: 'CI / install hooks bypassed with --skip-hooks',  severity: 'warning' },
+      { name: 'skip-tests',            desc: 'Tests disabled or skipped in CI configuration',   severity: 'warning' },
     ],
   },
+  // ── 3. Accessibility (19) ────────────────────────────────────────────────────
   {
-    name: 'healthcare',
-    label: 'Healthcare / PHI',
-    icon: '🏥',
-    color: '#22c55e',
+    name: 'accessibility', label: 'Accessibility (a11y)', icon: '♿', color: '#06b6d4',
     patterns: [
-      { name: 'patient-id', desc: 'Patient identifier (PID/MRN)', severity: 'critical' },
-      { name: 'medical-record-number', desc: 'Medical record number (MRN)', severity: 'critical' },
-      { name: 'clinical-trial-id', desc: 'Clinical trial identifier', severity: 'high' },
-      { name: 'prescription-number', desc: 'Prescription/Rx number', severity: 'high' },
-      { name: 'medical-license-number', desc: 'Medical license number', severity: 'high' },
-      { name: 'insurance-number', desc: 'Insurance/policy number', severity: 'high' },
-      { name: 'healthcare-code', desc: 'Healthcare procedure/diagnosis code (ICD, CPT)', severity: 'medium' },
+      { name: 'aria-labels',               desc: 'Element missing ARIA label for screen readers', severity: 'warning' },
+      { name: 'color-contrast',            desc: 'Foreground/background contrast below WCAG 4.5:1', severity: 'warning' },
+      { name: 'focus-management',          desc: 'Focus not properly managed on interaction',     severity: 'warning' },
+      { name: 'form-labels',               desc: 'Form input without associated label element',  severity: 'warning' },
+      { name: 'heading-hierarchy',         desc: 'Heading hierarchy skipped or incorrect',       severity: 'warning' },
+      { name: 'inaccessible-modal-dialogs', desc: 'Modal dialog not keyboard/screen-reader accessible', severity: 'warning' },
+      { name: 'incorrect-heading-hierarchy', desc: 'Heading level skipped (e.g. h1→h3)',         severity: 'warning' },
+      { name: 'keyboard-navigation',        desc: 'Interactive element missing keyboard support', severity: 'warning' },
+      { name: 'missing-alt-text',           desc: 'Image missing alt attribute',                 severity: 'warning' },
+      { name: 'missing-aria-label',        desc: 'Interactive element missing ARIA label',      severity: 'warning' },
+      { name: 'missing-aria-live-regions', desc: 'Dynamic content change not announced',        severity: 'warning' },
+      { name: 'missing-focus-indicators',   desc: 'Focus indicator invisible or missing',        severity: 'warning' },
+      { name: 'missing-form-labels',        desc: 'Form field without visible or ARIA label',  severity: 'warning' },
+      { name: 'missing-language-attribute', desc: 'html lang attribute missing or invalid',     severity: 'warning' },
+      { name: 'missing-skip-links',         desc: 'Skip navigation link missing for keyboard users', severity: 'warning' },
+      { name: 'poor-focus-management',       desc: 'Focus not moved to new content (modals, toasts)', severity: 'warning' },
+      { name: 'poor-screen-reader-announcements', desc: 'Dynamic updates not announced to screen readers', severity: 'warning' },
+      { name: 'semantic-html',              desc: 'Non-semantic element used where semantic element exists', severity: 'warning' },
+      { name: 'table-headers',               desc: 'Table missing proper th headers or scope attributes', severity: 'warning' },
     ],
   },
+  // ── 4. Security Hardening (14) ───────────────────────────────────────────────
   {
-    name: 'finance',
-    label: 'Financial Data',
-    icon: '💳',
-    color: '#f59e0b',
+    name: 'security-hardening', label: 'Security Hardening', icon: '🛡️', color: '#dc2626',
     patterns: [
-      { name: 'aba-routing-number', desc: 'ABA routing transit number (US bank)', severity: 'high' },
-      { name: 'iban', desc: 'International Bank Account Number', severity: 'high' },
-      { name: 'swift-bic', desc: 'SWIFT/BIC code for international transfers', severity: 'medium' },
+      { name: 'authentication-bypass',       desc: 'Authentication can be bypassed or circumvented', severity: 'critical' },
+      { name: 'authentication',             desc: 'Missing or insufficient authentication mechanism', severity: 'critical' },
+      { name: 'cors',                       desc: 'CORS policy too permissive or misconfigured',   severity: 'critical' },
+      { name: 'csrf',                       desc: 'CSRF protection missing on state-changing request', severity: 'critical' },
+      { name: 'hardcoded-secrets',          desc: 'Secret or credential hardcoded in source',     severity: 'critical' },
+      { name: 'injection',                  desc: 'Injection vulnerability (SQL, OS, LDAP, etc.)', severity: 'critical' },
+      { name: 'input-validation',           desc: 'User input not validated or sanitized',        severity: 'critical' },
+      { name: 'insecure-dependencies',       desc: 'Dependency with known unfixed vulnerability', severity: 'critical' },
+      { name: 'path-traversal',              desc: 'Path traversal / directory traversal risk',    severity: 'critical' },
+      { name: 'python-command-injection',    desc: 'Python os.system / subprocess with user input', severity: 'critical' },
+      { name: 'session-fixation',            desc: 'Session fixation — attacker sets session ID', severity: 'critical' },
+      { name: 'session-management',          desc: 'Weak or missing session management',          severity: 'critical' },
+      { name: 'weak-cryptography',            desc: 'Weak hashing, encryption, or signature',     severity: 'critical' },
+      { name: 'xss',                         desc: 'Cross-site scripting (XSS) vulnerability',   severity: 'critical' },
     ],
   },
+  // ── 5. Web Development (12) ──────────────────────────────────────────────────
   {
-    name: 'pii',
-    label: 'PII / Personal Data',
-    icon: '👤',
-    color: '#8b5cf6',
+    name: 'web-development', label: 'Web Development', icon: '🌐', color: '#7c3aed',
     patterns: [
-      { name: 'social-security-number', desc: 'US Social Security Number (SSN)', severity: 'critical' },
-      { name: 'phone-number', desc: 'Phone number (personal)', severity: 'medium' },
+      { name: 'bundler-optimization',      desc: 'Bundler optimization not enabled or misconfigured', severity: 'info' },
+      { name: 'error-boundaries',          desc: 'React component missing error boundary',          severity: 'warning' },
+      { name: 'form-validation',           desc: 'Form input not validated on client or server',    severity: 'warning' },
+      { name: 'incorrect-semantic-html',   desc: 'Semantic HTML element used incorrectly',         severity: 'warning' },
+      { name: 'inefficient-css',           desc: 'Inefficient CSS selector or unused styles',      severity: 'warning' },
+      { name: 'missing-prop-validation',   desc: 'Component props not validated (TypeScript/PropTypes)', severity: 'warning' },
+      { name: 'nextjs',                    desc: 'Next.js configuration issue or anti-pattern',     severity: 'warning' },
+      { name: 'poor-error-boundary',       desc: 'Error boundary swallows errors silently',         severity: 'warning' },
+      { name: 'react-optimization',        desc: 'React component not optimized (memo, useMemo)',  severity: 'warning' },
+      { name: 'seo-meta-tags',             desc: 'SEO meta tags missing or incomplete',            severity: 'info' },
+      { name: 'state-management',          desc: 'Improper or inefficient state management pattern', severity: 'warning' },
+      { name: 'typescript-any',            desc: 'TypeScript: \'any\' type used — defeats type safety', severity: 'warning' },
+    ],
+  },
+  // ── 6. Web Security (12) ─────────────────────────────────────────────────────
+  {
+    name: 'web-security', label: 'Web Security', icon: '🔒', color: '#b45309',
+    patterns: [
+      { name: 'django-csrf-missing',                    desc: 'Django view without @csrf_protect decorator',       severity: 'critical' },
+      { name: 'dom-based-xss',                          desc: 'DOM-based XSS — user input into innerHTML / eval', severity: 'critical' },
+      { name: 'express-form-without-csrf',             desc: 'Express form handler missing CSRF middleware',     severity: 'critical' },
+      { name: 'flask-form-without-csrf',               desc: 'Flask form handler missing CSRF protection',       severity: 'critical' },
+      { name: 'innerHTML-user-input',                  desc: 'User-supplied data passed to innerHTML',           severity: 'critical' },
+      { name: 'insecure-deserialization',              desc: 'Insecure deserialization of untrusted data',       severity: 'critical' },
+      { name: 'js-sql-template-literal',                desc: 'SQL built with JS template literal (injection)',   severity: 'critical' },
+      { name: 'prototype-pollution',                  desc: 'Prototype pollution vulnerability',                severity: 'critical' },
+      { name: 'python-sql-f-string',                   desc: 'SQL built with Python f-string (injection)',       severity: 'critical' },
+      { name: 'python-sql-string-format',              desc: 'SQL built with str.format() (injection risk)',      severity: 'critical' },
+      { name: 'react-dangerously-set-inner-html',      desc: 'react-html prop used — potential XSS',             severity: 'critical' },
+      { name: 'vue-html-directive',                    desc: 'Vue v-html directive with user-supplied content', severity: 'critical' },
+    ],
+  },
+  // ── 7. Performance (12) ─────────────────────────────────────────────────────
+  {
+    name: 'performance', label: 'Performance', icon: '⚡', color: '#eab308',
+    patterns: [
+      { name: 'blocking-main-thread',              desc: 'Synchronous operation blocks the main thread',      severity: 'warning' },
+      { name: 'database-connection-leak',            desc: 'Database connection not properly closed / pooled',  severity: 'critical' },
+      { name: 'inefficient-data-structures',        desc: 'Suboptimal data structure choice (array vs map)',  severity: 'warning' },
+      { name: 'inefficient-regex',                  desc: 'Regex causing catastrophic backtracking or O(n²)', severity: 'warning' },
+      { name: 'large-object-cloning',               desc: 'Large object cloned on every request (closure)',   severity: 'warning' },
+      { name: 'memory-leak-closure',                desc: 'Closure capturing large object preventing GC',      severity: 'warning' },
+      { name: 'missing-caching-opportunities',      desc: 'Repeated identical computation not cached',        severity: 'info' },
+      { name: 'missing-caching',                    desc: 'Cache headers or CDN caching not configured',       severity: 'warning' },
+      { name: 'missing-index',                      desc: 'Database query without index on filter column',   severity: 'warning' },
+      { name: 'missing-lazy-loading',               desc: 'Resource loaded eagerly instead of lazy-loaded',   severity: 'warning' },
+      { name: 'n-plus-one-query',                   desc: 'N+1 query pattern — one query per related record', severity: 'warning' },
+      { name: 'synchronous-api',                    desc: 'Synchronous API call in async context blocks event loop', severity: 'warning' },
+    ],
+  },
+  // ── 8. API Integration (8) ───────────────────────────────────────────────────
+  {
+    name: 'api-integration', label: 'API Integration', icon: '🔗', color: '#0ea5e9',
+    patterns: [
+      { name: 'api-versioning',  desc: 'API endpoint lacks versioning strategy',    severity: 'warning' },
+      { name: 'authentication',  desc: 'API endpoint missing authentication',        severity: 'critical' },
+      { name: 'error-handling', desc: 'API error responses not handled gracefully', severity: 'warning' },
+      { name: 'graphql',         desc: 'GraphQL query complexity or depth not limited', severity: 'warning' },
+      { name: 'pagination',     desc: 'API returns unpaginated large result set',    severity: 'warning' },
+      { name: 'rate-limiting',  desc: 'API rate limiting not implemented',           severity: 'warning' },
+      { name: 'rest',           desc: 'Non-REST or mixed REST conventions used',     severity: 'warning' },
+      { name: 'timeout',        desc: 'API client missing request timeout',           severity: 'warning' },
+    ],
+  },
+  // ── 9. Cloud Native (6) ─────────────────────────────────────────────────────
+  {
+    name: 'cloud-native', label: 'Cloud Native', icon: '☁️', color: '#38bdf8',
+    patterns: [
+      { name: 'docker',         desc: 'Dockerfile missing healthcheck or security hardening', severity: 'warning' },
+      { name: 'health-checks',  desc: 'Service missing liveness or readiness probe',          severity: 'warning' },
+      { name: 'kubernetes',      desc: 'Kubernetes deployment misconfiguration detected',       severity: 'warning' },
+      { name: 'multi-region',    desc: 'Multi-region deployment / failover not configured',    severity: 'info' },
+      { name: 'serverless',      desc: 'Serverless function timeout or memory misconfiguration', severity: 'warning' },
+      { name: 'terraform',       desc: 'Terraform resource misconfiguration detected',           severity: 'warning' },
+    ],
+  },
+  // ── 10. DevOps (6) ──────────────────────────────────────────────────────────
+  {
+    name: 'devops', label: 'DevOps / CI-CD', icon: '🔧', color: '#64748b',
+    patterns: [
+      { name: 'ci-bypass',           desc: 'CI gate can be bypassed or skipped in PR',     severity: 'critical' },
+      { name: 'ci-cd',              desc: 'CI/CD pipeline misconfiguration detected',       severity: 'warning' },
+      { name: 'dockerfile',          desc: 'Dockerfile security or best-practice issue',   severity: 'warning' },
+      { name: 'git-hook',           desc: 'Git hook misconfiguration detected',            severity: 'warning' },
+      { name: 'github-workflow',    desc: 'GitHub Actions workflow misconfiguration',      severity: 'warning' },
+      { name: 'kubernetes',          desc: 'Kubernetes configuration issue in YAML manifest', severity: 'warning' },
+    ],
+  },
+  // ── 11. AI Detection (6) ────────────────────────────────────────────────────
+  {
+    name: 'ai-detection', label: 'AI Detection', icon: '🤖', color: '#a78bfa',
+    patterns: [
+      { name: 'ai-buzzwords',        desc: 'AI buzzword inflation without substance',      severity: 'info' },
+      { name: 'ai-emoji',            desc: 'Excessive AI emoji usage in code or docs',     severity: 'info' },
+      { name: 'ai-incomplete-code',  desc: 'AI-generated code that appears incomplete',   severity: 'warning' },
+      { name: 'ai-overuse',          desc: 'AI-generated content overused in codebase',   severity: 'info' },
+      { name: 'ai-safety-bypass',    desc: 'Attempt to bypass AI safety or content filters', severity: 'critical' },
+      { name: 'ai-template',         desc: 'AI prompt template left in codebase',          severity: 'info' },
+    ],
+  },
+  // ── 12. Healthcare / PHI (6) ────────────────────────────────────────────────
+  {
+    name: 'healthcare', label: 'Healthcare / PHI', icon: '🏥', color: '#22c55e',
+    patterns: [
+      { name: 'patient-id',              desc: 'Patient identifier (PID / MRN) detected',   severity: 'critical' },
+      { name: 'medical-record-number',    desc: 'Medical record number (MRN) detected',       severity: 'critical' },
+      { name: 'clinical-trial-id',        desc: 'Clinical trial identifier detected',          severity: 'critical' },
+      { name: 'prescription-number',     desc: 'Prescription / Rx number detected',            severity: 'critical' },
+      { name: 'medical-license-number',  desc: 'Medical license number detected',              severity: 'critical' },
+      { name: 'insurance-number',        desc: 'Insurance / policy number detected',           severity: 'critical' },
+      { name: 'healthcare-code',         desc: 'Healthcare procedure / diagnosis code (ICD, CPT)', severity: 'warning' },
+    ],
+  },
+  // ── 13. PWA (5) ─────────────────────────────────────────────────────────────
+  {
+    name: 'pwa', label: 'PWA', icon: '📱', color: '#f97316',
+    patterns: [
+      { name: 'caching-strategy',  desc: 'PWA service worker caching strategy not optimal', severity: 'info' },
+      { name: 'manifest',          desc: 'web app manifest missing or incomplete',           severity: 'warning' },
+      { name: 'offline-support',   desc: 'App functionality not available offline',         severity: 'info' },
+      { name: 'service-worker',    desc: 'Service worker registration or scope issue',       severity: 'warning' },
+      { name: 'shortcuts',         desc: 'PWA home screen shortcuts not configured',       severity: 'info' },
+    ],
+  },
+  // ── 14. Data Visualization (5) ─────────────────────────────────────────────
+  {
+    name: 'data-visualization', label: 'Data Visualization', icon: '📊', color: '#ec4899',
+    patterns: [
+      { name: 'chart-accessibility',   desc: 'Chart missing alt text or data table fallback',    severity: 'warning' },
+      { name: 'chart-config',          desc: 'Chart configuration missing or invalid',           severity: 'info' },
+      { name: 'chart-types',          desc: 'Inappropriate chart type for data distribution',    severity: 'info' },
+      { name: 'color-schemes',         desc: 'Chart colors not accessible (colorblind unsafe)',  severity: 'info' },
+      { name: 'mobile-optimization',   desc: 'Chart not optimized for mobile viewports',          severity: 'warning' },
+    ],
+  },
+  // ── 15. Frameworks (3) ──────────────────────────────────────────────────────
+  {
+    name: 'frameworks', label: 'Frameworks', icon: '⚛️', color: '#06b6d4',
+    patterns: [
+      { name: 'django-debug-print',      desc: 'Django debug print / print statement in production', severity: 'warning' },
+      { name: 'nodejs-todo-development', desc: 'TODO in Node.js source flagged for dev only',       severity: 'info' },
+      { name: 'react-console-log-dev',  desc: 'React console.log left in development code',        severity: 'warning' },
+    ],
+  },
+  // ── 16. Finance (3) ─────────────────────────────────────────────────────────
+  {
+    name: 'finance', label: 'Financial Data', icon: '💳', color: '#f59e0b',
+    patterns: [
+      { name: 'aba-routing',  desc: 'ABA routing transit number (US bank account)',     severity: 'critical' },
+      { name: 'iban',         desc: 'International Bank Account Number (IBAN)',          severity: 'critical' },
+      { name: 'swift-bic',    desc: 'SWIFT / BIC code for international transfers',      severity: 'warning' },
+    ],
+  },
+  // ── 17. PII (3) ─────────────────────────────────────────────────────────────
+  {
+    name: 'pii', label: 'PII / Personal Data', icon: '👤', color: '#8b5cf6',
+    patterns: [
+      { name: 'creditcard', desc: 'Credit / debit card number detected',      severity: 'critical' },
+      { name: 'phone',      desc: 'Personal phone number detected',           severity: 'warning' },
+      { name: 'ssn',        desc: 'US Social Security Number (SSN) detected', severity: 'critical' },
     ],
   },
 ]
@@ -157,17 +346,49 @@ export default function Pipeline() {
       </div>
 
       {/* Quick stats */}
-      {scanStats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {scanStats ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: 'Total Packages', value: scanStats.total_repositories?.toLocaleString() || '—', color: 'text-white' },
-            { label: 'Avg Quality', value: scanStats.average_quality_score?.toFixed(1) || '—', color: 'text-blue-400' },
-            { label: 'Real Scans', value: scanStats.total_scans?.toLocaleString() || '—', color: 'text-purple-400' },
-            { label: 'Languages', value: Object.keys(scanStats.language_distribution || {}).length, color: 'text-green-400' },
+            { label: 'Packages', value: scanStats.total_repositories?.toLocaleString() || '—', color: 'text-white' },
+            { label: 'Total Files', value: (scanStats.total_files || 0).toLocaleString(), color: 'text-blue-400' },
+            { label: 'Dependencies', value: (scanStats.total_dependencies || 0).toLocaleString(), color: 'text-purple-400' },
+            { label: 'Avg Quality', value: scanStats.average_quality_score?.toFixed(1) || '—', color: 'text-green-400' },
+            { label: 'Languages', value: Object.keys(scanStats.language_distribution || {}).length, color: 'text-yellow-400' },
+            { label: 'Security Findings', value: scanStats.security_stats?.total_findings?.toLocaleString() || '—', color: 'text-red-400' },
           ].map(s => (
-            <div key={s.label} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-              <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
+            <div key={s.label} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+              <div className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</div>
               <div className="text-xs text-gray-400 mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {['Packages', 'Total Files', 'Dependencies', 'Avg Quality', 'Languages', 'Security Findings'].map(l => (
+            <div key={l} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+              <div className="h-6 w-16 bg-gray-700 rounded animate-pulse mb-1" />
+              <div className="h-3 w-12 bg-gray-700 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Additional stats row */}
+      {scanStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          {[
+            { label: 'Tier A', value: scanStats.tier_distribution?.A || 0, color: 'text-green-400' },
+            { label: 'Tier B', value: scanStats.tier_distribution?.B || 0, color: 'text-blue-400' },
+            { label: 'Tier C', value: scanStats.tier_distribution?.C || 0, color: 'text-yellow-400' },
+            { label: 'Tier D', value: scanStats.tier_distribution?.D || 0, color: 'text-orange-400' },
+            { label: 'Tier F', value: scanStats.tier_distribution?.F || 0, color: 'text-red-400' },
+            { label: 'Critical', value: scanStats.security_stats?.critical || 0, color: 'text-red-400' },
+            { label: 'High', value: scanStats.security_stats?.high || 0, color: 'text-orange-400' },
+            { label: 'Medium', value: scanStats.security_stats?.medium || 0, color: 'text-yellow-400' },
+          ].map(s => (
+            <div key={s.label} className="bg-gray-900 rounded-lg p-2 border border-gray-700 text-center">
+              <div className={`text-lg font-bold ${s.color}`}>{s.value.toLocaleString()}</div>
+              <div className="text-xs text-gray-500">{s.label}</div>
             </div>
           ))}
         </div>

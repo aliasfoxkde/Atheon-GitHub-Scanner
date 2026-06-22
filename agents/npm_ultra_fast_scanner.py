@@ -185,8 +185,8 @@ class UltraFastNpmScanner:
                         files = list(item.rglob('*'))
                         scan_result['total_files'] += len(files)
                         scan_result['total_size_bytes'] += sum(f.stat().st_size for f in files if f.is_file())
-                    except:
-                        pass
+                    except OSError:
+                        pass  # Non-critical: file access error, continue
 
             # Try to get GitHub info
             github_info = self.get_github_info(package_name)
@@ -200,8 +200,8 @@ class UltraFastNpmScanner:
             # Clean up
             try:
                 shutil.rmtree(package_dir)
-            except:
-                pass
+            except OSError:
+                pass  # Non-critical: cleanup failed, continue
 
             return scan_result
 
@@ -233,10 +233,10 @@ class UltraFastNpmScanner:
                             'full_name': data.get('full_name'),
                             'forks': data.get('forks_count', 0)
                         }
-                except:
-                    continue
+                except requests.exceptions.RequestException:
+                    continue  # Non-critical: API request failed, try next repo
 
-        except:
+        except requests.exceptions.RequestException:
             return None
 
     def run_ultra_fast_scan(self, target_count: int = 5000) -> Dict:

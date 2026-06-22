@@ -446,8 +446,8 @@ class PackageRegistryScanner:
                             try:
                                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                                     total_lines += len(f.readlines())
-                            except:
-                                pass
+                            except OSError:
+                                pass  # Non-critical: file read error, continue
 
             # Get git stats
             commit_count = 0
@@ -461,8 +461,8 @@ class PackageRegistryScanner:
                 )
                 if result.returncode == 0:
                     commit_count = int(result.stdout.strip())
-            except:
-                pass
+            except OSError:
+                pass  # Non-critical: git command failed, continue with 0
 
             # Extract dependencies if possible
             dependencies = []
@@ -472,8 +472,8 @@ class PackageRegistryScanner:
                         package_json = json.load(f)
                         deps = package_json.get('dependencies', {})
                         dependencies = list(deps.keys())[:10]  # Top 10 deps
-                except:
-                    pass
+                except (json.JSONDecodeError, IOError):
+                    pass  # Non-critical: package.json missing or invalid
 
             # Calculate quality score
             quality_score = min(100, (

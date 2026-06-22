@@ -171,8 +171,8 @@ class HybridMassScanner:
                                 # Check if it's a code file
                             if file.endswith(('.py', '.js', '.ts', '.java', '.go', '.cpp', '.c', '.rb', '.php', '.rs', '.kt', '.swift')):
                                 code_files += 1
-                        except:
-                            pass
+                        except (UnicodeDecodeError, OSError):
+                            pass  # Non-critical: file read error, continue
 
             # Get commit history (basic stats)
             commit_count = 0
@@ -186,8 +186,8 @@ class HybridMassScanner:
                 )
                 if result.returncode == 0:
                     commit_count = int(result.stdout.strip())
-            except:
-                pass
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass  # Non-critical: git command failed, continue
 
             # Get contributors count
             contributors = 0
@@ -201,8 +201,8 @@ class HybridMassScanner:
                 )
                 if result.returncode == 0:
                     contributors = len([line for line in result.stdout.strip().split('\n') if line])
-            except:
-                pass
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass  # Non-critical: git command failed, continue
 
             # Enhanced analysis result
             scan_result = {

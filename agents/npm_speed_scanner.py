@@ -237,8 +237,8 @@ class NpmPackageScanner:
                             'language': data.get('language', 'JavaScript'),
                             'full_name': data.get('full_name')
                         }
-                except:
-                    continue
+                except requests.exceptions.RequestException:
+                    continue  # Non-critical: API request failed, try next
 
         except Exception as e:
             logger.debug(f"Could not get GitHub info for {package_name}: {e}")

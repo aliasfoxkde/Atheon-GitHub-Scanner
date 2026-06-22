@@ -144,8 +144,8 @@ class UltraFastPythonScanner:
                             name = info.get('name', '')
                             if name:
                                 packages.add(name)
-                    except:
-                        continue
+                    except Exception:
+                        continue  # Non-critical: JSON parse error, skip this package
 
             logger.info(f"Found {len(packages)} packages from PyPI")
             return list(packages)[:count]
@@ -230,8 +230,8 @@ class UltraFastPythonScanner:
                         scan_result['total_size_bytes'] += sum(
                             f.stat().st_size for f in files if f.is_file()
                         )
-                    except:
-                        pass
+                    except OSError:
+                        pass  # Non-critical: file access error, continue
 
             # Try to get GitHub info
             github_info = self.get_github_info(package_name)
@@ -245,8 +245,8 @@ class UltraFastPythonScanner:
             # Clean up
             try:
                 shutil.rmtree(package_dir)
-            except:
-                pass
+            except OSError:
+                pass  # Non-critical: cleanup failed, continue
 
             return scan_result
 
@@ -261,7 +261,7 @@ class UltraFastPythonScanner:
         try:
             result = subprocess.run(['uv', '--version'], capture_output=True, timeout=5)
             return result.returncode == 0
-        except:
+        except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
 
     def get_github_info(self, package_name: str) -> Optional[Dict]:
@@ -287,10 +287,10 @@ class UltraFastPythonScanner:
                             'full_name': data.get('full_name'),
                             'forks': data.get('forks_count', 0)
                         }
-                except:
-                    continue
+                except requests.exceptions.RequestException:
+                    continue  # Non-critical: API request failed, try next repo
 
-        except:
+        except requests.exceptions.RequestException:
             return None
 
     def run_ultra_fast_scan(self, target_count: int = 5000) -> Dict:

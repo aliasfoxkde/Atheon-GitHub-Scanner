@@ -499,8 +499,8 @@ class BenchmarkIntegrator:
                         numbers = re.findall(r'\\d+\\.?\\d*', line)
                         if numbers:
                             return float(numbers[0])
-        except:
-            pass
+        except (ValueError, subprocess.TimeoutExpired):
+            pass  # Non-critical: parse failed or command timeout
         return 0.0
 
 
@@ -681,8 +681,8 @@ Co-Authored-By: Atheon Daemon <daemon@atheon.ai>
         try:
             result = self.benchmark.run_benchmark_tests()
             return result.get('performance_score', 0.0)
-        except:
-            return 0.0
+        except (AttributeError, TypeError):
+            return 0.0  # Non-critical: benchmark failed
 
     def identify_optimizations(self, current_state: Dict) -> List[Dict]:
         """Identify optimization opportunities"""

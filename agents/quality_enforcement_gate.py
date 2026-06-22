@@ -119,8 +119,8 @@ class QualityEnforcementGate:
                 with open(combined_file, 'r') as f:
                     data = json.load(f)
                 return len(data)
-        except:
-            pass
+        except (json.JSONDecodeError, IOError):
+            pass  # Non-critical: file missing or corrupted, return 0
 
         # Check incremental file
         incremental_file = self.data_dir / "incremental_scan_results.jsonl"

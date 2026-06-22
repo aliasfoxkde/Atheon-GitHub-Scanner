@@ -281,8 +281,8 @@ class RealGitHubScanner:
             days_since_update = (datetime.now(updated_date.tzinfo) - updated_date).days
             if days_since_update < 30:
                 base_score += 5  # Bonus for active development
-        except:
-            pass
+        except ValueError:
+            pass  # Non-critical: date parsing failed, continue
 
         # Stars consideration (popularity as proxy for quality)
         if repository.stars > 10000:
