@@ -18,6 +18,30 @@ import requests
 import hashlib
 import shutil
 
+
+def sanitize_path(path: str, base_dir: str = None) -> str:
+    """Prevent path traversal by resolving to absolute and checking bounds.
+
+    Args:
+        path: The path to sanitize
+        base_dir: Optional base directory to constrain path within
+
+    Returns:
+        Sanitized absolute path
+    """
+    import re
+    # Remove any null bytes and control characters
+    path = path.replace('\x00', '')
+    # Remove path traversal attempts
+    path = re.sub(r'\.\.[/\\]', '', path)
+    abs_path = os.path.abspath(path)
+    if base_dir:
+        base_abs = os.path.abspath(base_dir)
+        if not abs_path.startswith(base_abs):
+            return base_abs
+    return abs_path
+
+
 # Configuration
 REPOS = {
     'atheon-scanner': {
@@ -266,10 +290,14 @@ class AtheonEnhancer:
     def create_pattern_file(self, pattern: Dict) -> bool:
         """Create a pattern file for Atheon"""
         try:
-            # Create pattern filename
-            pattern_slug = pattern['name'].lower().replace(' ', '-').replace('_', '-')
+            # Create pattern filename - sanitize to prevent path traversal
+            unsafe_slug = pattern['name'].lower().replace(' ', '-').replace('_', '-')
+            # Allow only alphanumeric, dash, and dot - remove any path traversal chars
+            pattern_slug = ''.join(c for c in unsafe_slug if c.isalnum() or c in '-.')
             filename = f"{pattern_slug}.yaml"
+            # Validate path stays within patterns_dir
             filepath = self.patterns_dir / filename
+            filepath = Path(sanitize_path(str(filepath), str(self.patterns_dir)))
 
             # Create YAML pattern file
             pattern_yaml = f"""name: {pattern['name']}
