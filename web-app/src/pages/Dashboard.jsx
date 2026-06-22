@@ -503,7 +503,7 @@ const Dashboard = () => {
                     Browse All
                   </Link>
                 </div>
-                <div className="flex gap-2 text-xs text-gray-400">
+                <div className="flex gap-2 text-xs text-gray-300">
                   <span className="px-2 py-0.5 bg-gray-700 rounded">{stats.totalRepos.toLocaleString()} packages</span>
                   <span className="px-2 py-0.5 bg-gray-700 rounded">v1.0.0</span>
                 </div>

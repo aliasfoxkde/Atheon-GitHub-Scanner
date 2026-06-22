@@ -534,9 +534,9 @@ class DailyAuditor:
 
         try:
             repos = {
-                'atheon-scanner': '/nas/Temp/repos/Atheon-GitHub-Scanner',
-                'atheon-enhanced': '/nas/Temp/repos/Atheon-Enhanced',
-                'atheon-benchmark': '/nas/Temp/repos/Atheon-Benchmark'
+                'atheon-scanner': os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner'),
+                'atheon-enhanced': os.environ.get('ATHEON_ENHANCED_PATH', '/nas/Temp/repos/Atheon-Enhanced'),
+                'atheon-benchmark': os.environ.get('ATHEON_BENCHMARK_PATH', '/nas/Temp/repos/Atheon-Benchmark')
             }
 
             for repo_name, repo_path in repos.items():
@@ -882,7 +882,7 @@ def main():
         # Example: Evaluate a PR
         example_pr = {
             'id': 'pr_123',
-            'repo_path': '/nas/Temp/repos/Atheon-GitHub-Scanner',
+            'repo_path': os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner'),
             'language': 'python',
             'files_changed': ['src/main.py', 'tests/test_main.py'],
             'has_api': True

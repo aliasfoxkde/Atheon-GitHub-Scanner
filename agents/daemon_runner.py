@@ -42,20 +42,22 @@ def sanitize_path(path: str, base_dir: str = None) -> str:
     return abs_path
 
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Configuration
 REPOS = {
     'atheon-scanner': {
-        'path': '/nas/Temp/repos/Atheon-GitHub-Scanner',
+        'path': SCANNER_ROOT,
         'name': 'Atheon-GitHub-Scanner',
         'role': 'scanner'
     },
     'atheon-enhanced': {
-        'path': '/nas/Temp/repos/Atheon-Enhanced',
+        'path': os.environ.get('ATHEON_ENHANCED_PATH', '/nas/Temp/repos/Atheon-Enhanced'),
         'name': 'Atheon-Enhanced',
         'role': 'scanner-core'
     },
     'atheon-benchmark': {
-        'path': '/nas/Temp/repos/Atheon-Benchmark',
+        'path': os.environ.get('ATHEON_BENCHMARK_PATH', '/nas/Temp/repos/Atheon-Benchmark'),
         'name': 'Atheon-Benchmark',
         'role': 'benchmark'
     }

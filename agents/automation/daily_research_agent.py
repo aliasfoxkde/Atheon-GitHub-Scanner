@@ -20,12 +20,14 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/daily_research.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/daily_research.log'),
         logging.StreamHandler()
     ]
 )
@@ -73,7 +75,8 @@ class DailyResearchAgent:
     """Automated daily research and pattern discovery system"""
 
     def __init__(self):
-        self.base_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner")
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.base_dir = Path(scanner_root)
         self.data_dir = self.base_dir / "data"
         self.agents_dir = self.base_dir / "agents"
         self.reports_dir = self.data_dir / "daily_reports"

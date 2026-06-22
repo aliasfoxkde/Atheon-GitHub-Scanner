@@ -42,12 +42,14 @@ def sanitize_path(path: str, base_dir: str = None) -> str:
     return abs_path
 
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/intelligence_sharing.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/intelligence_sharing.log'),
         logging.StreamHandler()
     ]
 )
@@ -82,7 +84,8 @@ class IntelligenceSharingAgent:
     """Cross-project intelligence sharing coordinator"""
 
     def __init__(self):
-        self.base_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner")
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.base_dir = Path(scanner_root)
         self.data_dir = self.base_dir / "data"
         self.intelligence_dir = self.data_dir / "intelligence"
         self.sharing_dir = self.intelligence_dir / "shared"

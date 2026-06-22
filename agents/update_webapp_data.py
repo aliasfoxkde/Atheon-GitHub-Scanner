@@ -19,8 +19,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class WebappUpdater:
-    def __init__(self, base_path: str = "/nas/Temp/repos/Atheon-GitHub-Scanner"):
-        self.base_path = Path(base_path)
+    def __init__(self, base_path: str = None):
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.base_path = Path(base_path) if base_path else Path(scanner_root)
         self.data_file = self.base_path / "data" / "combined_scan_results.json"
         self.webapp_path = self.base_path / "web-app"
         self.mock_data_file = self.webapp_path / "src" / "services" / "mockData.js"

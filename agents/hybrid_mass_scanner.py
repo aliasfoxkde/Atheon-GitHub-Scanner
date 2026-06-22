@@ -24,12 +24,14 @@ from dataclasses import dataclass, asdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/hybrid_scan.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/hybrid_scan.log'),
         logging.StreamHandler()
     ]
 )
@@ -59,11 +61,11 @@ class HybridMassScanner:
         if self.github_token:
             self.headers['Authorization'] = f'token {self.github_token}'
 
-        self.data_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner/data")
+        self.data_dir = Path(os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')) / "data"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Local clone directory
-        self.clone_dir = Path("/nas/Temp/repos/github_clones")
+        self.clone_dir = Path(os.environ.get('TEMP_DIR', '/nas/Temp')) / "github_clones"
         self.clone_dir.mkdir(parents=True, exist_ok=True)
 
         # Progress tracking

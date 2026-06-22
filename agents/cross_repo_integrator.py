@@ -28,19 +28,20 @@ class CrossRepositoryCoordinator:
     """Coordinates activities across all Atheon repositories"""
 
     def __init__(self):
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
         self.repos = {
             'atheon-scanner': {
-                'path': '/nas/Temp/repos/Atheon-GitHub-Scanner',
+                'path': scanner_root,
                 'role': 'scanner',
                 'url': 'https://github.com/aliasfoxkde/Atheon-GitHub-Scanner'
             },
             'atheon-enhanced': {
-                'path': '/nas/Temp/repos/Atheon-Enhanced',
+                'path': os.environ.get('ATHEON_ENHANCED_PATH', '/nas/Temp/repos/Atheon-Enhanced'),
                 'role': 'scanner-core',
                 'url': 'https://github.com/aliasfoxkde/Atheon-Enhanced'
             },
             'atheon-benchmark': {
-                'path': '/nas/Temp/repos/Atheon-Benchmark',
+                'path': os.environ.get('ATHEON_BENCHMARK_PATH', '/nas/Temp/repos/Atheon-Benchmark'),
                 'role': 'benchmark',
                 'url': 'https://github.com/aliasfoxkde/Atheon-Benchmark'
             }

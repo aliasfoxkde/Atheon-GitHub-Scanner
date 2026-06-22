@@ -28,12 +28,13 @@ class SelfImprovementAgent:
     """Automated self-improvement agent for Atheon ecosystem"""
 
     def __init__(self):
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
         self.repos = {
-            'atheon-scanner': '/nas/Temp/repos/Atheon-GitHub-Scanner',
-            'atheon-enhanced': '/nas/Temp/repos/Atheon-Enhanced',
-            'atheon-benchmark': '/nas/Temp/repos/Atheon-Benchmark'
+            'atheon-scanner': scanner_root,
+            'atheon-enhanced': os.environ.get('ATHEON_ENHANCED_PATH', '/nas/Temp/repos/Atheon-Enhanced'),
+            'atheon-benchmark': os.environ.get('ATHEON_BENCHMARK_PATH', '/nas/Temp/repos/Atheon-Benchmark')
         }
-        self.state_file = Path('/tmp/atheon_self_improvement_state.json')
+        self.state_file = Path(os.environ.get('TEMP_DIR', '/tmp') + '/atheon_self_improvement_state.json')
         self.learning_rate = 0.1
         self.load_state()
 

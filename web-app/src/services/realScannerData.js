@@ -1,8 +1,8 @@
 // Service to load REAL scanner data
 // Uses embedded data as primary source (always available in deployment)
 
-const WORKER_API_URL = 'https://atheon-scanner-api.workers.dev';
-const EMBEDDED_DATA_URL = '/embedded-data.json';
+const WORKER_API_URL = import.meta.env.VITE_WORKER_API_URL || 'https://atheon-scanner-api.workers.dev';
+const EMBEDDED_DATA_URL = import.meta.env.VITE_EMBEDDED_DATA_URL || '/embedded-data.json';
 
 // Module-level cache with TTL
 let _cache = null;

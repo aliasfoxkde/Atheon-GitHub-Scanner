@@ -21,12 +21,14 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import schedule
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/automation_scheduler.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/automation_scheduler.log'),
         logging.StreamHandler()
     ]
 )
@@ -71,7 +73,8 @@ class AutomationScheduler:
     """Manages and executes automated tasks on schedule"""
 
     def __init__(self):
-        self.base_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner")
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.base_dir = Path(scanner_root)
         self.data_dir = self.base_dir / "data"
         self.agents_dir = self.base_dir / "agents"
         self.automation_dir = self.agents_dir / "automation"

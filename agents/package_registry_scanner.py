@@ -55,12 +55,14 @@ def sanitize_path(path: str, base_dir: str = None) -> str:
     return abs_path
 
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/package_scan.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/package_scan.log'),
         logging.StreamHandler()
     ]
 )
@@ -81,11 +83,12 @@ class PackageRegistryScanner:
     """Scanner for discovering repositories through package ecosystems"""
 
     def __init__(self):
-        self.data_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner/data")
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.data_dir = Path(scanner_root) / "data"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Clone directory for package repos
-        self.clone_dir = Path("/nas/Temp/repos/package_repos")
+        self.clone_dir = Path(os.environ.get('TEMP_DIR', '/nas/Temp')) / "package_repos"
         self.clone_dir.mkdir(parents=True, exist_ok=True)
 
         # Progress tracking

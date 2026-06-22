@@ -25,12 +25,14 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import csv
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/mass_scan.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/mass_scan.log'),
         logging.StreamHandler()
     ]
 )
@@ -59,7 +61,7 @@ class RealGitHubMassScanner:
         if self.github_token:
             self.headers['Authorization'] = f'token {self.github_token}'
 
-        self.data_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner/data")
+        self.data_dir = Path(os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')) / "data"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Rate limiting

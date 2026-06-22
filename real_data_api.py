@@ -79,8 +79,9 @@ def require_auth(f):
     return decorated
 
 # Data directories
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
 DATA_DIRS = [
-    Path("/nas/Temp/repos/Atheon-GitHub-Scanner/data"),
+    Path(SCANNER_ROOT) / "data",
     Path("/nas/Temp/repos/data"),
     Path("./data")
 ]

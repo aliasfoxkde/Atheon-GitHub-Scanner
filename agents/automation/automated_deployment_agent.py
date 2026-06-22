@@ -18,12 +18,14 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/deployment.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/deployment.log'),
         logging.StreamHandler()
     ]
 )
@@ -58,7 +60,8 @@ class AutomatedDeploymentAgent:
     """Automated deployment with quality gates"""
 
     def __init__(self):
-        self.base_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner")
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.base_dir = Path(scanner_root)
         self.data_dir = self.base_dir / "data"
         self.webapp_dir = self.base_dir / "web-app"
         self.agents_dir = self.base_dir / "agents"

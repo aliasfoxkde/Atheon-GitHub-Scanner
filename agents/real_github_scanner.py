@@ -63,7 +63,7 @@ class RealGitHubScanner:
         if self.github_token:
             self.headers['Authorization'] = f'token {self.github_token}'
 
-        self.data_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner/data")
+        self.data_dir = Path(os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')) / "data"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         self.rate_limit_delay = 2  # Seconds between requests
@@ -433,7 +433,7 @@ def main():
     print(f"   Tier distribution: {tier_dist}")
     print(f"   Total findings: {sum(r.findings_count for r in results)}")
 
-    print(f"\n💾 Results saved to: /nas/Temp/repos/Atheon-GitHub-Scanner/data/")
+    print(f"\n💾 Results saved to: {self.data_dir}/")
 
 if __name__ == "__main__":
     main()

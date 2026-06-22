@@ -59,11 +59,13 @@ def sanitize_path(path: str, base_dir: str = None) -> str:
     return abs_path
 
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/universal_scan.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/universal_scan.log'),
         logging.StreamHandler()
     ]
 )
@@ -85,10 +87,11 @@ class UniversalPackageScanner:
     """Universal scanner for all package ecosystems"""
 
     def __init__(self):
-        self.data_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner/data")
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.data_dir = Path(scanner_root) / "data"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
-        self.clone_dir = Path("/nas/Temp/repos/universal_package_repos")
+        self.clone_dir = Path(os.environ.get('TEMP_DIR', '/nas/Temp')) / "universal_package_repos"
         self.clone_dir.mkdir(parents=True, exist_ok=True)
 
         self.progress_file = self.data_dir / "universal_scan_progress.json"

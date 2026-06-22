@@ -102,14 +102,13 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(2000);
 
-      // Get the first repo name - look for h3 inside the repo list cards
-      // Repo cards are inside .space-y-3 with hover:border-blue-600
-      const firstRepoCard = page.locator('.space-y-3 > div').first();
-      const firstRepoName = await firstRepoCard.locator('h3').first().textContent();
+      // Trending now uses a table layout — get first data row (skip thead)
+      const firstDataRow = page.locator('tbody tr').first();
+      const firstRepoName = await firstDataRow.locator('td:nth-child(2)').textContent();
       console.log('First repo to watch:', firstRepoName);
 
-      // Click the "Watch" button on the first item
-      const watchBtn = firstRepoCard.locator('button:has-text("Watch")').first();
+      // Click the ☆ Watch star button in the last column of the first row
+      const watchBtn = firstDataRow.locator('td:last-child button[title="Add to watchlist"]');
       await expect(watchBtn).toBeVisible();
       await watchBtn.click();
       await page.waitForTimeout(1000);

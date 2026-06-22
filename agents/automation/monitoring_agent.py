@@ -20,12 +20,14 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 
+SCANNER_ROOT = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/nas/Temp/repos/Atheon-GitHub-Scanner/data/monitoring.log'),
+        logging.FileHandler(f'{SCANNER_ROOT}/data/monitoring.log'),
         logging.StreamHandler()
     ]
 )
@@ -57,7 +59,8 @@ class MonitoringAgent:
     """Continuous monitoring and health assessment"""
 
     def __init__(self):
-        self.base_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner")
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.base_dir = Path(scanner_root)
         self.data_dir = self.base_dir / "data"
         self.monitoring_dir = self.data_dir / "monitoring"
         self.alerts_dir = self.monitoring_dir / "alerts"

@@ -35,7 +35,8 @@ class QualityEnforcementGate:
     """
 
     def __init__(self):
-        self.data_dir = Path("/nas/Temp/repos/Atheon-GitHub-Scanner/data")
+        scanner_root = os.environ.get('SCANNER_ROOT', '/nas/Temp/repos/Atheon-GitHub-Scanner')
+        self.data_dir = Path(scanner_root) / "data"
         self.audit_log = self.data_dir / "quality_gate_audit.json"
 
     def validate_all_data_claims(self, claimed_stats: Dict[str, Any]) -> QualityGateResult:

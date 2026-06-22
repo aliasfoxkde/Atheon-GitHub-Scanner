@@ -38,9 +38,9 @@ def sanitize_package_name(name: str) -> str:
 class UltraFastNpmScanner:
     """Ultra-fast npm registry scanner with no limits"""
 
-    def __init__(self, output_dir: str = "../data", temp_dir: str = "/nas/Temp/atheon-scanner"):
+    def __init__(self, output_dir: str = "../data", temp_dir: str = None):
         self.output_dir = Path(output_dir)
-        self.temp_dir = Path(temp_dir)
+        self.temp_dir = Path(temp_dir) if temp_dir else Path(os.environ.get('ATHEON_SCANNER_PATH', os.path.join(os.environ.get('TEMP_DIR', tempfile.gettempdir()), 'atheon-scanner')))
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -318,7 +318,7 @@ def main():
     parser = argparse.ArgumentParser(description='Ultra-fast npm scanner with no limits')
     parser.add_argument('--count', type=int, default=5000, help='Target package count (NO HARD LIMITS)')
     parser.add_argument('--output', type=str, default='../data', help='Output directory')
-    parser.add_argument('--temp', type=str, default='/nas/Temp/atheon-scanner', help='Temp directory')
+    parser.add_argument('--temp', type=str, default=None, help='Temp directory (default: from ATHEON_SCANNER_PATH or TEMP_DIR env)')
 
     args = parser.parse_args()
 
