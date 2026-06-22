@@ -31,6 +31,11 @@ from dataclasses import dataclass, asdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
+
+def sanitize_repo_name(name: str) -> str:
+    """Remove anything except alphanumeric, dash, underscore, dot, slash"""
+    return re.sub(r'[^a-zA-Z0-9._/-]', '', name)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -391,12 +396,14 @@ class UniversalPackageScanner:
 
             logger.info(f"Cloning {github_url} ({package_info['ecosystem']})...")
 
-            repo_path = self.clone_dir / github_url.replace('/', '_')
+            # Sanitize the GitHub URL for use in paths
+            safe_github_url = sanitize_repo_name(github_url)
+            repo_path = self.clone_dir / safe_github_url.replace('/', '_')
 
             if repo_path.exists():
                 shutil.rmtree(repo_path)
 
-            clone_url = f"https://github.com/{github_url}.git"
+            clone_url = f"https://github.com/{safe_github_url}.git"
             result = subprocess.run(
                 ['git', 'clone', '--depth', '1', clone_url, str(repo_path)],
                 capture_output=True,
