@@ -8,6 +8,7 @@ import os
 import json
 import subprocess
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
@@ -16,6 +17,11 @@ import hashlib
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('CrossRepoIntegrator')
+
+
+def sanitize_path(path: str) -> str:
+    """Remove anything except alphanumeric, dash, underscore, dot, slash, space"""
+    return re.sub(r'[^a-zA-Z0-9._/\- ]', '', path)
 
 
 class CrossRepositoryCoordinator:
@@ -339,7 +345,7 @@ Co-Authored-By: Atheon Automation <automation@atheon.ai>
 
         for repo_name in ['atheon-enhanced', 'atheon-benchmark']:
             try:
-                repo_path = self.repos[repo_name]['path']
+                repo_path = sanitize_path(self.repos[repo_name]['path'])
                 subprocess.run(['git', 'add', '.'], cwd=repo_path, capture_output=True)
                 subprocess.run(['git', 'commit', '-m', commit_message], cwd=repo_path, capture_output=True)
                 subprocess.run(['git', 'push', 'origin', 'master'], cwd=repo_path, capture_output=True)
