@@ -17,6 +17,7 @@ import logging
 import subprocess
 import tempfile
 import shutil
+import re
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -27,6 +28,11 @@ import threading
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+def sanitize_package_name(name: str) -> str:
+    """Remove anything except alphanumeric, dash, underscore, dot"""
+    return re.sub(r'[^a-zA-Z0-9._-]', '', name)
 
 class RubyGemsScanner:
     """RubyGems scanner with parallel processing"""
@@ -96,13 +102,15 @@ class RubyGemsScanner:
                 if current_count % 10 == 0 and current_count > 0:
                     logger.info(f"📊 Progress: {current_count} gems scanned")
 
-            gem_dir = self.temp_dir / f"ruby_worker_{worker_id}" / gem_name
+            # Sanitize gem name for use in paths and commands
+            safe_gem_name = sanitize_package_name(gem_name)
+            gem_dir = self.temp_dir / f"ruby_worker_{worker_id}" / safe_gem_name
             gem_dir.mkdir(parents=True, exist_ok=True)
 
             # Download gem using gem install
             download_cmd = [
                 'gem', 'install', '--install-dir', str(gem_dir),
-                '--no-document', gem_name
+                '--no-document', safe_gem_name
             ]
 
             result = subprocess.run(
