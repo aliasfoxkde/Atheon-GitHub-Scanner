@@ -76,32 +76,21 @@ cd web-app && npm run dev
 
 ### Features & Guides
 - **[Scanning Modes](./docs/guides/scanning-modes.md)** - Single repo, trending, category scanning
-- **[Pattern Matching](./docs/guides/pattern-matching.md)** - Security and quality patterns
-- **[Quality Scoring](./docs/guides/quality-scoring.md)** - How scores are calculated
-- **[Report Generation](./docs/guides/report-generation.md)** - Understanding scan reports
+- **[PWA Deployment](./docs/guides/pwa-deployment.md)** - Web app deployment guide
+- **[Contributing Guide](./docs/guides/CONTRIBUTE.md)** - How to contribute
 
 ### Technical Documentation
-- **[Architecture](./docs/technical/architecture.md)** - System design and components
 - **[API Reference](./docs/api/reference.md)** - Complete API documentation
-- **[Database Schema](./docs/technical/database.md)** - Data models and relationships
-- **[GitHub Integration](./docs/technical/github-api.md)** - API usage and rate limiting
+- **[Implementation Summary](./docs/technical/implementation-summary.md)** - System design overview
+- **[Progress](./docs/technical/progress.md)** - Development progress tracking
 
 ### Development
-- **[Contributing](CONTRIBUTE.md)** - How to contribute to the project
-- **[Development Setup](./docs/development/setup.md)** - Development environment
-- **[Testing Guide](./docs/development/testing.md)** - Running and writing tests
-- **[Code Standards](./docs/development/standards.md)** - Coding conventions
+- **[Contributing](CONTRIBUTING.md)** - How to contribute to the project
+- **[Development Tasks](./docs/development/tasks.md)** - Development guidelines
 
 ### Reference
-- **[Configuration](./docs/reference/configuration.md)** - All configuration options
 - **[Pattern Reference](./docs/reference/patterns.md)** - Available security patterns
-- **[CLI Reference](./docs/reference/cli.md)** - Command-line interface
 - **[Report Database](./docs/reports/README.md)** - Public repository reports
-
-### Project Documentation
-- **[Implementation Plan](./docs/technical/implementation-plan.md)** - Development roadmap
-- **[Progress Tracking](./docs/technical/progress.md)** - Current development status
-- **[PWA Architecture](./docs/technical/pwa-architecture.md)** - Web application design
 - **[Report Index](./docs/reports/index.md)** - Complete report database
 
 ## 🏗️ Architecture
@@ -252,10 +241,63 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTE.md) for
 ## 🔒 Security
 
 This project follows responsible security practices:
-- 📋 [Security Policy](SECURITY.md) - Vulnerability reporting process
+- 📋 [Security Policy](docs/security/SECURITY.md) - Vulnerability reporting process
 - 🔐 **Secure Patterns** - Credential detection and sanitization
 - 🛡️ **Data Protection** - Automatic cleanup and secure storage
 - ✅ **Regular Audits** - Dependency updates and code review
+
+## 🔒 Security Policy
+
+For vulnerability reporting and security best practices, see our [Security Policy](docs/security/SECURITY.md).
+
+**Key Security Features:**
+- Pattern-based credential detection (API keys, tokens, database passwords)
+- Automatic sanitization of sensitive data in reports
+- Secure GitHub API token handling via environment variables
+- No code storage after scanning (automatic cleanup)
+
+## 🚀 Deployment
+
+### Docker Deployment
+
+```bash
+# Build scanner images
+cd docker
+docker-compose build
+
+# Run scanners
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+### Cloudflare Pages Deployment
+
+```bash
+# Install Wrangler CLI
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Deploy web app
+cd web-app
+npm run build
+wrangler pages deploy dist
+```
+
+### Environment Variables
+
+```bash
+# Required for scanning
+GITHUB_TOKEN=ghp_xxx          # GitHub personal access token
+SCANNER_ROOT=/path/to/scanner  # Scanner root directory
+
+# Optional
+DATABASE_URL=postgres://...     # PostgreSQL connection string
+API_PORT=8000                   # API server port
+```
 
 ## 📜 License
 
@@ -271,7 +313,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: [GitHub Issues](https://github.com/aliasfoxkde/Atheon-Scanner/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/aliasfoxkde/Atheon-Scanner/discussions)
-- **Security**: See [SECURITY.md](SECURITY.md)
+- **Security**: See [Security Policy](docs/security/SECURITY.md)
 
 ## 🌟 Star History
 
