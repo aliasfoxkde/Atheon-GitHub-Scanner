@@ -16,6 +16,30 @@ from datetime import datetime
 from typing import Dict, List, Any
 import logging
 from functools import lru_cache
+import re
+
+
+def sanitize_path(path: str, base_dir: str = None) -> str:
+    """Prevent path traversal by resolving to absolute and checking bounds.
+
+    Args:
+        path: The path to sanitize
+        base_dir: Optional base directory to constrain path within
+
+    Returns:
+        Sanitized absolute path
+    """
+    # Remove any null bytes and control characters
+    path = path.replace('\x00', '')
+    # Remove path traversal attempts
+    path = re.sub(r'\.\.[/\\]', '', path)
+    abs_path = os.path.abspath(path)
+    if base_dir:
+        base_abs = os.path.abspath(base_dir)
+        if not abs_path.startswith(base_abs):
+            return base_abs
+    return abs_path
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -518,7 +542,9 @@ def index():
 @app.route('/<path:path>')
 def static_files(path):
     """Serve static files"""
-    return send_from_directory('web-app', path)
+    # Sanitize path to prevent path traversal attacks
+    safe_path = sanitize_path(os.path.join('web-app', path), 'web-app')
+    return send_from_directory('web-app', safe_path)
 
 if __name__ == '__main__':
     logger.info("Starting REAL DATA API server...")
