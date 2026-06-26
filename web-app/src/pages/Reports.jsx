@@ -264,7 +264,7 @@ export default function Reports() {
 
   const toggleCol = (col) => {
     const key = `show${col.charAt(0).toUpperCase() + col.slice(1)}`
-    const next = { ...settings, [key]: settings[key] === false ? true : (settings[key] !== false ? false : true) }
+    const next = { ...settings, [key]: !settings[key] }
     updateSettings(next)
   }
 

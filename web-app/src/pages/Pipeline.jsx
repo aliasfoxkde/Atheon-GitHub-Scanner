@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { loadRealScannerData } from '../services/realScannerData'
 import { Skeleton, SkeletonDonut } from '../components/Skeleton'
 import { DonutChart } from '../components/Charts'
+import { useToast } from '../contexts/ToastContext'
 
 const ATHEON_VERSION = 'v1.0.0'
 const SCAN_CATEGORIES = [
@@ -301,13 +302,17 @@ export default function Pipeline() {
   const [loading, setLoading] = useState(false)
   const [selectedCat, setSelectedCat] = useState(null)
   const [scanStats, setScanStats] = useState(null)
+  const toast = useToast()
 
   const loadStats = async () => {
     setLoading(true)
     try {
       const data = await loadRealScannerData()
       setScanStats(data)
-    } catch { /* ignore */ }
+    } catch (err) {
+      toast.error('Failed to load pipeline statistics')
+      console.error('Pipeline stats error:', err)
+    }
     setLoading(false)
   }
 

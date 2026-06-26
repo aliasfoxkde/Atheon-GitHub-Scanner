@@ -35,7 +35,6 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
     panel.addEventListener('keydown', trap);
 
     return () => {
-      window.removeEventListener('keydown', () => {});
       panel.removeEventListener('keydown', trap);
       document.body.style.overflow = '';
       prev?.focus();
