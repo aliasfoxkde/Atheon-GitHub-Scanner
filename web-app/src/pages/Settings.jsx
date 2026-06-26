@@ -14,7 +14,7 @@ const REFRESH_OPTIONS = [
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 export default function Settings() {
-  const { settings, update, reset } = useSettings();
+  const { settings, updateSettings, reset } = useSettings();
   const { theme, setThemeMode } = useTheme();
   const toast = useToast();
 
@@ -75,7 +75,7 @@ export default function Settings() {
             </label>
             <select
               value={settings.autoRefreshInterval}
-              onChange={(e) => update({ autoRefreshInterval: Number(e.target.value) })}
+              onChange={(e) => updateSettings({ autoRefreshInterval: Number(e.target.value) })}
               className="w-full sm:w-auto bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white"
             >
               {REFRESH_OPTIONS.map((o) => (
@@ -99,7 +99,7 @@ export default function Settings() {
             <label className="block text-sm font-medium text-gray-300 mb-2">Default page size</label>
             <select
               value={settings.defaultPageSize}
-              onChange={(e) => update({ defaultPageSize: Number(e.target.value) })}
+              onChange={(e) => updateSettings({ defaultPageSize: Number(e.target.value) })}
               className="w-full sm:w-auto bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white"
             >
               {PAGE_SIZE_OPTIONS.map((n) => (
@@ -115,7 +115,7 @@ export default function Settings() {
               {['comfortable', 'compact'].map((d) => (
                 <button
                   key={d}
-                  onClick={() => update({ density: d })}
+                  onClick={() => updateSettings({ density: d })}
                   className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
                     settings.density === d
                       ? 'bg-blue-600 text-white'
@@ -139,7 +139,7 @@ export default function Settings() {
                   <input
                     type="checkbox"
                     checked={settings[key]}
-                    onChange={(e) => update({ [key]: e.target.checked })}
+                    onChange={(e) => updateSettings({ [key]: e.target.checked })}
                     className="rounded border-gray-600 bg-gray-700 text-blue-500"
                   />
                   {label}

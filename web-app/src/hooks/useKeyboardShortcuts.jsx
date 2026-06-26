@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Modal from '../components/Modal';
 
 /**
  * Global keyboard shortcuts.
@@ -103,14 +104,8 @@ export function ShortcutsModal({ open, onClose }) {
     { keys: ['Esc'], desc: 'Close modal / blur input' },
   ];
   return (
-    <div
-      className="fixed inset-0 z-[90] bg-black/60 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-gray-800 border border-gray-700 rounded-lg max-w-md w-full p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal id="shortcuts-modal" label="Keyboard shortcuts" onClose={onClose} size="max-w-md">
+      <div className="p-6">
         <h2 className="text-xl font-bold text-white mb-4">Keyboard shortcuts</h2>
         <ul className="space-y-2 text-sm">
           {items.map((it, i) => (
@@ -136,6 +131,6 @@ export function ShortcutsModal({ open, onClose }) {
           Close
         </button>
       </div>
-    </div>
+    </Modal>
   );
 }

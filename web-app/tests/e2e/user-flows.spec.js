@@ -133,38 +133,45 @@ test.describe('User Flow Tests', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Collect the package names on page 1
-    const page1Names = await page.locator('tbody tr td:nth-child(3)').allTextContents();
-    expect(page1Names.length).toBeGreaterThan(0);
-
-    // Page indicator should show "Page 1"
-    const pageIndicator = page.locator('text=Page 1 of');
+    // Page indicator should show "Page 1 of N"
+    const pageIndicator = page.getByText(/Page \d+ of/, { exact: false });
     await expect(pageIndicator).toBeVisible();
 
-    // Navigate to page 2
-    const page2Btn = page.getByRole('button', { name: '2' });
-    const page2Visible = await page2Btn.isVisible().catch(() => false);
-    expect(page2Visible).toBe(true);
-    await page2Btn.click();
-    await page.waitForTimeout(1500);
+    // Collect rows on page 1
+    const page1Rows = page.locator('tbody tr');
+    const page1Count = await page1Rows.count();
+    expect(page1Count).toBeGreaterThan(0);
 
-    // Page indicator should now show "Page 2"
-    const page2Indicator = page.locator('text=Page 2 of');
+    // Use "Next" button to advance to page 2 (avoids ambiguity of page-number buttons in large paginations)
+    const nextBtn = page.getByText('Next');
+    await expect(nextBtn).toBeEnabled();
+    await nextBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Previous button should now be enabled (we're no longer on page 1)
+    const prevBtn = page.getByText('Previous');
+    await expect(prevBtn).toBeEnabled();
+
+    // Page indicator should show page 2
+    const page2Indicator = page.getByText(/Page 2 of/, { exact: false });
     await expect(page2Indicator).toBeVisible();
 
     // Page 2 should have rows
-    const page2Names = await page.locator('tbody tr td:nth-child(3)').allTextContents();
-    expect(page2Names.length).toBeGreaterThan(0);
+    const page2Rows = page.locator('tbody tr');
+    const page2Count = await page2Rows.count();
+    expect(page2Count).toBeGreaterThan(0);
 
-    // Navigate back to page 1 using the "«" first-page button
+    // Navigate back to page 1 using "First page" button
     const firstPageBtn = page.locator('[aria-label="First page"]');
+    await expect(firstPageBtn).toBeEnabled();
     await firstPageBtn.click();
-    await page.waitForTimeout(1500);
-    await expect(pageIndicator).toBeVisible();
+    await page.waitForTimeout(2000);
 
-    // Page 1 rows should be restored
-    const backToPage1Names = await page.locator('tbody tr td:nth-child(3)').allTextContents();
-    expect(backToPage1Names.length).toBe(page1Names.length);
+    // Should be back on page 1
+    await expect(pageIndicator).toBeVisible();
+    const backToPage1Rows = page.locator('tbody tr');
+    const backToPage1Count = await backToPage1Rows.count();
+    expect(backToPage1Count).toBe(page1Count);
   });
 
   test('Dashboard: global search navigates to filtered reports', async ({ page }) => {

@@ -36,6 +36,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   // Global search
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,17 +178,27 @@ const Dashboard = () => {
     fetchStats(controller.signal);
     checkHealth(controller.signal);
     const seconds = Number(settings.autoRefreshInterval) || 0;
-    let interval;
+    setCountdown(seconds);
+
     if (seconds > 0) {
-      interval = setInterval(() => {
-        const ctrl = new AbortController();
-        fetchStats(ctrl.signal);
-        checkHealth(ctrl.signal);
-      }, seconds * 1000);
+      const tick = setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) {
+            const ctrl = new AbortController();
+            fetchStats(ctrl.signal);
+            checkHealth(ctrl.signal);
+            return seconds;
+          }
+          return c - 1;
+        });
+      }, 1000);
+      return () => {
+        controller.abort();
+        clearInterval(tick);
+      };
     }
     return () => {
       controller.abort();
-      if (interval) clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.autoRefreshInterval]);
@@ -524,7 +535,9 @@ const Dashboard = () => {
                 Updated: <span className="text-white font-medium">{formatDate(stats.lastUpdated)}</span>
               </span>
               <span className="text-gray-400 text-xs ml-auto hidden sm:inline">
-                Auto-refresh: {Number(settings.autoRefreshInterval) > 0 ? `${settings.autoRefreshInterval}s` : 'off'}
+                Auto-refresh: {Number(settings.autoRefreshInterval) > 0
+                  ? countdown > 0 ? `${countdown}s` : 'refreshing…'
+                  : 'off'}
               </span>
             </div>
           )}

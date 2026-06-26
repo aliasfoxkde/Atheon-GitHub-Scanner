@@ -1,14 +1,18 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useToast } from '../contexts/ToastContext';
 import { Skeleton } from './Skeleton';
 import { getScoreColor, getTierColor } from '../utils/colors';
 import { formatDate } from '../utils/date';
+import { loadRealScannerData } from '../services/realScannerData';
 
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 export default function ReportDetailModal({ report, onClose, onCompare }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [copying, setCopying] = useState(false);
+  const [trendData, setTrendData] = useState(null);
+  const [langAvg, setLangAvg] = useState(null);
   const panelRef = useRef(null);
   const toast = useToast();
 
@@ -110,6 +114,39 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
     }
     handleCopy();
   };
+
+  // Derive score context: compare this package's score against language average and ecosystem mean.
+  // Build a 14-point synthetic trend from scan_date, using the package's score as the anchor.
+  useEffect(() => {
+    const controller = new AbortController();
+    loadRealScannerData(controller.signal)
+      .then((data) => {
+        if (!data) return;
+        // Find language average from top_languages
+        const langEntry = (data.top_languages || []).find(
+          (l) => l.language?.toLowerCase() === language?.toLowerCase()
+        );
+        const avg = langEntry?.avgScore ?? langEntry?.average_quality_score ?? data.quality_stats?.average ?? 0;
+        setLangAvg(avg);
+
+        // Build 14-day synthetic trend anchored at the scan_date
+        const scanTs = scanDate ? new Date(scanDate).getTime() : Date.now();
+        const score = qualityScore;
+        // Minor synthetic variation: gentle oscillation toward the average
+        const trend = Array.from({ length: 14 }, (_, i) => {
+          const dayTs = scanTs - (13 - i) * 86_400_000;
+          const t = i / 13; // 0→1
+          const noise = Math.sin(t * Math.PI * 2) * (score * 0.04) + (Math.cos(t * Math.PI) * (avg - score) * 0.15);
+          return {
+            day: new Date(dayTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            score: Math.min(100, Math.max(0, Math.round(score + noise))),
+          };
+        });
+        setTrendData(trend);
+      })
+      .catch(() => { /* ignore — chart just won't show */ });
+    return () => controller.abort();
+  }, [language, qualityScore, scanDate]);
 
   return (
     <div
@@ -247,6 +284,32 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {trendData && (
+                <div className="bg-gray-900 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-white mb-1">Score Context</h3>
+                  <p className="text-xs text-gray-400 mb-4">
+                    Synthetic 14-day quality score trend for this package vs. the {language} ecosystem average ({Math.round(langAvg ?? 0)}).
+                  </p>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <LineChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} interval={3} />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
+                        labelStyle={{ color: '#D1D5DB' }}
+                        itemStyle={{ color: '#60A5FA' }}
+                      />
+                      {langAvg > 0 && (
+                        <ReferenceLine y={langAvg} stroke="#9CA3AF" strokeDasharray="4 4" label={{ value: `avg ${Math.round(langAvg)}`, position: 'insideTopRight', fontSize: 10, fill: '#9CA3AF' }} />
+                      )}
+                      <ReferenceLine y={qualityScore} stroke="#60A5FA" strokeDasharray="2 2" label={{ value: `this ${qualityScore}`, position: 'insideTopLeft', fontSize: 10, fill: '#60A5FA' }} />
+                      <Line type="monotone" dataKey="score" stroke="#60A5FA" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#60A5FA' }} />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>

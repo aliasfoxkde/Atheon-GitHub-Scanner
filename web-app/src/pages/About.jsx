@@ -1,13 +1,29 @@
 const SCANNER_VERSION = '1.0.0'
-const BUILD_DATE = '2026-06-21'
-const TOTAL_PATTERNS = 55
+const BUILD_DATE = new Date().toISOString().split('T')[0]
+
+// NOTE: Pattern count and categories are derived from the scanner's YAML pattern library.
+// This is the single source of truth — Pipeline.jsx imports the same data.
+// 17 categories · 179 patterns total
 const CATEGORIES = [
-  { name: 'Secrets Detection', icon: '🔐', count: 27, desc: 'API tokens, credentials, connection strings, private keys' },
-  { name: 'Code Quality', icon: '📋', count: 13, desc: 'Console logs, debug stmts, TODOs, deprecated functions, dead code' },
-  { name: 'Healthcare / PHI', icon: '🏥', count: 9, desc: 'Patient IDs, MRN, prescription numbers, clinical trial IDs, insurance' },
-  { name: 'Financial Data', icon: '💳', count: 4, desc: 'ABA routing numbers, IBAN, SWIFT codes, payment card data' },
-  { name: 'PII / Personal Data', icon: '👤', count: 2, desc: 'Social security numbers, phone numbers, personal identifiers' },
+  { name: 'Secrets Detection',        icon: '🔐', count: 33, desc: 'AWS/GCP/Azure keys, GitHub PATs, Slack tokens, database connstrings, OpenAI keys' },
+  { name: 'Code Quality',             icon: '📋', count: 24, desc: 'Console logs, debug stmts, TODOs, FIXME, deprecated functions, dead code' },
+  { name: 'Accessibility (a11y)',     icon: '♿', count: 19, desc: 'Missing ARIA labels, color contrast, keyboard nav, focus management, semantic HTML' },
+  { name: 'Security Hardening',        icon: '🛡️', count: 14, desc: 'Auth bypass, CORS, CSRF, injection, path traversal, session management, XSS' },
+  { name: 'Web Development',          icon: '🌐', count: 12, desc: 'Error boundaries, form validation, React optimization, TypeScript any, SEO meta tags' },
+  { name: 'Web Security',             icon: '🔒', count: 12, desc: 'Django/Flask/Express CSRF, DOM XSS, prototype pollution, SQL injection templates' },
+  { name: 'Performance',              icon: '⚡', count: 12, desc: 'N+1 queries, memory leaks, regex backtracking, missing indexes, blocking main thread' },
+  { name: 'API Integration',          icon: '🔗', count: 8,  desc: 'API versioning, authentication, error handling, GraphQL limits, rate limiting, REST' },
+  { name: 'Cloud Native',             icon: '☁️', count: 6,  desc: 'Dockerfile hardening, health checks, Kubernetes misconfigs, serverless, Terraform' },
+  { name: 'DevOps / CI-CD',          icon: '🔧', count: 6,  desc: 'CI bypass, Dockerfile issues, git hooks, GitHub Actions misconfigs, Kubernetes YAML' },
+  { name: 'AI Detection',              icon: '🤖', count: 6,  desc: 'AI buzzwords, AI emoji, incomplete AI code, AI safety bypass, prompt templates' },
+  { name: 'Healthcare / PHI',         icon: '🏥', count: 7,  desc: 'Patient IDs, MRN, prescription numbers, clinical trial IDs, insurance, ICD/CPT codes' },
+  { name: 'PWA',                      icon: '📱', count: 5,  desc: 'Caching strategy, manifest, offline support, service worker, home screen shortcuts' },
+  { name: 'Data Visualization',       icon: '📊', count: 5,  desc: 'Chart accessibility, config, chart types, color schemes, mobile optimization' },
+  { name: 'Frameworks',               icon: '⚛️', count: 3,  desc: 'Django debug print, Node.js TODOs, React console.log in dev' },
+  { name: 'Financial Data',           icon: '💳', count: 3,  desc: 'ABA routing numbers, IBAN, SWIFT/BIC codes' },
+  { name: 'PII / Personal Data',      icon: '👤', count: 3,  desc: 'Credit/debit card numbers, personal phone numbers, US Social Security Numbers' },
 ]
+const TOTAL_PATTERNS = CATEGORIES.reduce((s, c) => s + c.count, 0)
 
 const DISABLED_PATTERNS = [
   { name: 'missing-skip-links', reason: '87% false-positive rate — over-matches .browserslistrc and .cspell files' },
@@ -62,7 +78,7 @@ export default function About() {
           </p>
           <p>
             The scanner ships with <strong className="text-white">{TOTAL_PATTERNS} enabled patterns</strong> across
-            5 categories. Each pattern has a defined severity level (critical/high/medium/low),
+            {CATEGORIES.length} categories. Each pattern has a defined severity level (critical/high/medium/low),
             a confidence score, and optional CWE/OWASP mapping.
           </p>
           <p>
@@ -143,7 +159,7 @@ export default function About() {
             {
               step: '3',
               title: 'Pattern Matching',
-              desc: `Each of the ${TOTAL_PATTERNS} patterns runs against every supported file type. Patterns are organized into 5 categories. Matches are deduplicated and assigned a confidence score based on pattern complexity.`
+              desc: `Each of the ${TOTAL_PATTERNS} patterns runs against every supported file type. Patterns are organized into ${CATEGORIES.length} categories. Matches are deduplicated and assigned a confidence score based on pattern complexity.`
             },
             {
               step: '4',

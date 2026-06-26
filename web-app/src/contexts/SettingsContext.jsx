@@ -30,11 +30,11 @@ export function SettingsProvider({ children }) {
     }
   }, [settings]);
 
-  const update = (patch) => setSettings((s) => ({ ...s, ...patch }));
+  const updateSettings = (patch) => setSettings((s) => ({ ...s, ...patch }));
   const reset = () => setSettings(DEFAULTS);
 
   return (
-    <SettingsContext.Provider value={{ settings, update, reset }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, reset }}>
       {children}
     </SettingsContext.Provider>
   );

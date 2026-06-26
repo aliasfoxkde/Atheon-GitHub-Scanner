@@ -4,7 +4,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { getAllRepositories, loadRealScannerData } from '../services/realScannerData'
 import ReportDetailModal from '../components/ReportDetailModal'
 import CompareModal from '../components/CompareModal'
+import Modal from '../components/Modal'
 import { SkeletonTable } from '../components/Skeleton'
+import Pagination from '../components/Pagination'
 import { useToast } from '../contexts/ToastContext'
 import { useSettings } from '../contexts/SettingsContext'
 
@@ -25,7 +27,7 @@ export default function Reports() {
   })
   const [showCompare, setShowCompare] = useState(false)
   const toast = useToast()
-  const { settings } = useSettings()
+  const { settings, updateSettings } = useSettings()
 
   const [availableLanguages, setAvailableLanguages] = useState([])
   const [availableTiers, setAvailableTiers] = useState(['A', 'B', 'C', 'D', 'F'])
@@ -36,6 +38,13 @@ export default function Reports() {
     search: searchParams.get('q') || '',
     bookmarks: false,
   })
+  const [savedPresets, setSavedPresets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('atheon_filter_presets') || '[]') } catch { return [] }
+  })
+  const [showPresetModal, setShowPresetModal] = useState(false)
+  const [presetName, setPresetName] = useState('')
+  const [showColPicker, setShowColPicker] = useState(false)
+  const [colPickerAnchor, setColPickerAnchor] = useState(null)
 
   // Load bookmarks from localStorage
   const [bookmarks, setBookmarks] = useState(() => {
@@ -45,13 +54,32 @@ export default function Reports() {
       return []
     }
   })
-  const [sort, setSort] = useState({ column: null, dir: 'asc' })
+  const [sort, setSort] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('atheon_sort') || '{}')
+      return stored.column ? stored : { column: null, dir: 'asc' }
+    } catch {
+      return { column: null, dir: 'asc' }
+    }
+  })
   const [pagination, setPagination] = useState({
     page: 1,
     perPage: settings.defaultPageSize,
     total: 0,
     pages: 0,
   })
+
+  // Close column picker on outside click
+  useEffect(() => {
+    if (!showColPicker) return
+    const handler = (e) => {
+      if (!e.target.closest('[aria-label="Toggle column visibility"]') && !e.target.closest('.col-picker-dropdown')) {
+        setShowColPicker(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showColPicker])
 
   // Abort controller ref for cancellable fetches
   const abortRef = useRef(null)
@@ -159,7 +187,11 @@ export default function Reports() {
   }, [settings.showStars, settings.showDeps, settings.showFiles])
 
   const handleSort = (column) => {
-    setSort((s) => s.column === column ? { column, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { column, dir: 'asc' })
+    setSort((s) => {
+      const next = s.column === column ? { column, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { column, dir: 'asc' }
+      try { localStorage.setItem('atheon_sort', JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
   }
 
   const handleFilterChange = (field, value) => {
@@ -184,6 +216,56 @@ export default function Reports() {
     setPagination((p) => ({ ...p, page: 1 }))
     setSearchParams(new URLSearchParams(), { replace: true })
     toast.info('Filters cleared')
+  }
+
+  const currentFilterState = () => ({
+    language: filters.language,
+    tier: filters.tier,
+    minScore: filters.minScore,
+    search: filters.search,
+  })
+
+  const hasActiveFilters = filters.language || filters.tier || filters.minScore || filters.search || filters.bookmarks
+
+  const savePreset = () => {
+    const name = presetName.trim()
+    if (!name) return
+    const entry = { name, filters: currentFilterState(), createdAt: new Date().toISOString() }
+    const next = [entry, ...savedPresets.filter((p) => p.name !== name)].slice(0, 10)
+    setSavedPresets(next)
+    try { localStorage.setItem('atheon_filter_presets', JSON.stringify(next)) } catch {}
+    setPresetName('')
+    setShowPresetModal(false)
+    toast.success(`Preset "${name}" saved`)
+  }
+
+  const deletePreset = (name) => {
+    const next = savedPresets.filter((p) => p.name !== name)
+    setSavedPresets(next)
+    try { localStorage.setItem('atheon_filter_presets', JSON.stringify(next)) } catch {}
+    toast.info(`Preset "${name}" removed`)
+  }
+
+  const applyPreset = (preset) => {
+    setFilters({ ...filters, ...preset.filters, bookmarks: false })
+    const next = new URLSearchParams(searchParams)
+    if (preset.filters.language) next.set('language', preset.filters.language)
+    else next.delete('language')
+    if (preset.filters.tier) next.set('tier', preset.filters.tier)
+    else next.delete('tier')
+    if (preset.filters.minScore) next.set('minScore', preset.filters.minScore)
+    else next.delete('minScore')
+    if (preset.filters.search) next.set('q', preset.filters.search)
+    else next.delete('q')
+    setSearchParams(next, { replace: true })
+    setPagination((p) => ({ ...p, page: 1 }))
+    toast.success(`Applied "${preset.name}"`)
+  }
+
+  const toggleCol = (col) => {
+    const key = `show${col.charAt(0).toUpperCase() + col.slice(1)}`
+    const next = { ...settings, [key]: settings[key] === false ? true : (settings[key] !== false ? false : true) }
+    updateSettings(next)
   }
 
   // Save bookmarks to localStorage
@@ -312,10 +394,37 @@ export default function Reports() {
               Compare ({selectedForCompare.length})
             </button>
             <button
+              onClick={() => {
+                setBookmarks((prev) => {
+                  const next = [...new Set([...prev, ...selectedForCompare])];
+                  try { localStorage.setItem('atheon_bookmarks', JSON.stringify(next)) } catch {}
+                  return next;
+                });
+                toast.success(`Bookmarked ${selectedForCompare.length} packages`);
+              }}
+              className="self-start sm:self-auto px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+            >
+              Bookmark ({selectedForCompare.length})
+            </button>
+            <button
+              onClick={() => {
+                const selected = sortedReports.filter((r) => selectedForCompare.includes(r.id));
+                download(
+                  `atheon-selected-${Date.now()}.json`,
+                  JSON.stringify(selected, null, 2),
+                  'application/json'
+                );
+                toast.success(`Exported ${selected.length} packages`);
+              }}
+              className="self-start sm:self-auto px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
+            >
+              Export JSON
+            </button>
+            <button
               onClick={clearCompareSelection}
               className="self-start sm:self-auto px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
             >
-              Clear selection
+              Clear
             </button>
           </>
         )}
@@ -390,7 +499,11 @@ export default function Reports() {
               min="0"
               max="100"
               value={filters.minScore}
-              onChange={(e) => handleFilterChange('minScore', e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                const n = Number(v);
+                if (!v || (n >= 0 && n <= 100)) handleFilterChange('minScore', v);
+              }}
               placeholder="0-100"
               className="w-full bg-gray-700 text-white rounded px-3 py-2 border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
             />
@@ -430,6 +543,23 @@ export default function Reports() {
           </button>
         ) : null}
 
+        {/* Saved filter presets */}
+        {savedPresets.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-500">Presets:</span>
+            {savedPresets.map((p) => (
+              <span key={p.name} className="group flex items-center gap-1 bg-gray-700 hover:bg-gray-600 rounded-full pl-3 pr-1 py-1 text-xs text-gray-200 transition-colors">
+                <button onClick={() => applyPreset(p)} className="hover:text-white">{p.name}</button>
+                <button
+                  onClick={() => deletePreset(p.name)}
+                  className="text-gray-400 hover:text-red-400 ml-0.5"
+                  aria-label={`Delete preset ${p.name}`}
+                >×</button>
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button onClick={() => window.print()} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -437,6 +567,52 @@ export default function Reports() {
             </svg>
             Print
           </button>
+          {/* Column visibility picker */}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowColPicker((v) => !v) }}
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors flex items-center gap-1.5"
+              aria-label="Toggle column visibility"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>
+              Columns
+            </button>
+            {showColPicker && (
+              <div className="absolute z-50 top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-3 min-w-40"
+                onClick={(e) => e.stopPropagation()}>
+                {[
+                  { key: 'showStars', label: '⭐ Stars' },
+                  { key: 'showDeps', label: '📦 Deps' },
+                  { key: 'showFiles', label: '📄 Files' },
+                ].map((col) => (
+                  <label key={col.key} className="flex items-center gap-2 py-1.5 px-1 cursor-pointer hover:bg-gray-700 rounded text-sm text-white">
+                    <input
+                      type="checkbox"
+                      checked={settings[col.key] !== false}
+                      onChange={() => toggleCol(col.key.replace('show', '').toLowerCase())}
+                      className="rounded border-gray-500"
+                    />
+                    {col.label}
+                  </label>
+                ))}
+                <button
+                  onClick={() => setShowColPicker(false)}
+                  className="mt-2 w-full text-center text-xs text-gray-400 hover:text-white pt-2 border-t border-gray-700"
+                >Done</button>
+              </div>
+            )}
+          </div>
+          {/* Save preset */}
+          {hasActiveFilters && (
+            <button
+              onClick={() => setShowPresetModal(true)}
+              className="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-sm rounded transition-colors flex items-center gap-1.5"
+              aria-label="Save current filters as preset"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+              Save Preset
+            </button>
+          )}
           <button onClick={() => exportData('csv')} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors">
             Page CSV
           </button>
@@ -521,7 +697,7 @@ export default function Reports() {
               {sortedReports.length === 0 ? (
                 <tr>
                   <td colSpan={tableColCount + 1} className="px-4 py-8 text-center text-gray-400">
-                    No repositories match your filters
+                    No repositories match your filters. Try adjusting your search or filters.
                   </td>
                 </tr>
               ) : (
@@ -607,52 +783,51 @@ export default function Reports() {
           </table>
 
           {pagination.pages > 1 && (
-            <div className="px-4 py-3 border-t border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
-              <div className="text-gray-400">
-                Showing {((pagination.page - 1) * pagination.perPage) + 1}–{Math.min(pagination.page * pagination.perPage, pagination.total)} of {pagination.total.toLocaleString()}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPagination((p) => ({ ...p, page: 1 }))}
-                  disabled={pagination.page === 1}
-                  className="px-2 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs transition-colors"
-                  aria-label="First page"
-                >
-                  «
-                </button>
-                <button
-                  onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                  disabled={pagination.page === 1}
-                  className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
-                >
-                  Previous
-                </button>
-                <span className="text-gray-400">
-                  Page {pagination.page} of {pagination.pages}
-                </span>
-                <button
-                  onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                  disabled={pagination.page === pagination.pages}
-                  className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
-                >
-                  Next
-                </button>
-                <button
-                  onClick={() => setPagination((p) => ({ ...p, page: p.pages }))}
-                  disabled={pagination.page === pagination.pages}
-                  className="px-2 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs transition-colors"
-                  aria-label="Last page"
-                >
-                  »
-                </button>
-              </div>
-            </div>
+            <Pagination
+              page={pagination.page}
+              pages={pagination.pages}
+              total={pagination.total}
+              perPage={pagination.perPage}
+              onChange={(p) => setPagination((prev) => ({ ...prev, page: p }))}
+            />
           )}
         </div>
       )}
 
       {showCompare && (
         <CompareModal ids={selectedForCompare} onClose={() => setShowCompare(false)} />
+      )}
+
+      {/* Save preset modal */}
+      {showPresetModal && (
+        <Modal id="save-preset-modal" label="Save Filter Preset" onClose={() => setShowPresetModal(false)} size="max-w-sm">
+          <div className="p-6">
+            <h3 className="text-white font-semibold mb-4">Save Filter Preset</h3>
+            <p className="text-gray-400 text-xs mb-3">Save the current filters as a quick-access preset.</p>
+            <div className="mb-4">
+              <div className="flex flex-wrap gap-1 mb-3 text-xs text-gray-400">
+                {filters.language && <span className="bg-gray-700 px-2 py-0.5 rounded">Lang: {filters.language}</span>}
+                {filters.tier && <span className="bg-gray-700 px-2 py-0.5 rounded">Tier: {filters.tier}</span>}
+                {filters.minScore && <span className="bg-gray-700 px-2 py-0.5 rounded">Min: {filters.minScore}</span>}
+                {filters.search && <span className="bg-gray-700 px-2 py-0.5 rounded truncate max-w-32">Q: {filters.search}</span>}
+              </div>
+              <input
+                autoFocus
+                type="text"
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && savePreset()}
+                placeholder="e.g. TypeScript Tier-A projects"
+                maxLength={40}
+                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none text-sm"
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowPresetModal(false)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm">Cancel</button>
+              <button onClick={savePreset} disabled={!presetName.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg text-sm">Save</button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   )

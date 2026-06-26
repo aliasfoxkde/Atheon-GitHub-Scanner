@@ -42,6 +42,18 @@ export default function CompareModal({ ids = [], onClose }) {
   const fileRows = compareMetric('total_files');
   const starRows = compareMetric('stars');
 
+  // Delta helpers: baseline is index 0
+  const fmtDelta = (baseline, value) => {
+    const diff = value - baseline;
+    if (diff === 0) return '—';
+    const sign = diff > 0 ? '+' : '';
+    return `${sign}${typeof diff === 'number' && !Number.isInteger(diff) ? diff.toFixed(1) : diff}`;
+  };
+  const baselineScore = reports[0]?.quality_score ?? 0;
+  const baselineDeps = reports[0]?.total_dependencies ?? 0;
+  const baselineFiles = reports[0]?.total_files ?? 0;
+  const baselineStars = reports[0]?.stars ?? 0;
+
   return (
     <Modal id="compare-modal" label="Compare reports" onClose={onClose} size="max-w-5xl">
       <div className="p-4 sm:p-6 border-b border-gray-700 flex items-center justify-between">
@@ -76,17 +88,23 @@ export default function CompareModal({ ids = [], onClose }) {
                 <thead>
                   <tr>
                     <th scope="col" className="text-left text-gray-400 font-medium px-3 py-2 w-32">Metric</th>
-                    {reports.map((r) => (
+                    {reports.map((r, i) => (
                       <th key={r.id} scope="col" className="text-left text-white font-semibold px-3 py-2 min-w-32 truncate">
-                        {r.name}
+                        {i === 0 ? `${r.name} ★` : r.name}
                       </th>
                     ))}
+                    {reports.length > 1 && (
+                      <th scope="col" className="text-left text-gray-400 font-medium px-3 py-2 w-16">
+                        Δ vs baseline
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td className="text-gray-400 px-3 py-2">Language</td>
                     {reports.map((r) => <td key={r.id} className="text-white px-3 py-2">{r.language}</td>)}
+                    {reports.length > 1 && <td />}
                   </tr>
                   <tr>
                     <td className="text-gray-400 px-3 py-2">Tier</td>
@@ -100,20 +118,31 @@ export default function CompareModal({ ids = [], onClose }) {
                         } text-white`}>{r.tier}</span>
                       </td>
                     ))}
+                    {reports.length > 1 && <td />}
+                  </tr>
+                  <tr>
+                    <td className="text-gray-400 px-3 py-2">Score</td>
+                    {scoreRows.map((row) => (
+                      <td key={row.idx} className="text-white px-3 py-2 font-medium">{row.raw}</td>
+                    ))}
+                    {reports.length > 1 && (
+                      <td className="text-xs px-3 py-2 text-gray-400">baseline</td>
+                    )}
                   </tr>
                   <tr>
                     <td className="text-gray-400 px-3 py-2">Scan method</td>
                     {reports.map((r) => <td key={r.id} className="text-white px-3 py-2 text-xs">{r.scan_method}</td>)}
+                    {reports.length > 1 && <td />}
                   </tr>
                 </tbody>
               </table>
             </div>
 
             {[
-              { label: 'Quality score', rows: scoreRows, format: (v) => v, color: 'bg-blue-500' },
-              { label: 'GitHub stars', rows: starRows, format: (v) => v.toLocaleString(), color: 'bg-yellow-500' },
-              { label: 'Dependencies', rows: depRows, format: (v) => v.toLocaleString(), color: 'bg-purple-500' },
-              { label: 'Files', rows: fileRows, format: (v) => v.toLocaleString(), color: 'bg-green-500' },
+              { label: 'Quality score', rows: scoreRows, baseline: baselineScore, deltaFn: fmtDelta, format: (v) => v, color: 'bg-blue-500' },
+              { label: 'GitHub stars', rows: starRows, baseline: baselineStars, deltaFn: fmtDelta, format: (v) => v.toLocaleString(), color: 'bg-yellow-500' },
+              { label: 'Dependencies', rows: depRows, baseline: baselineDeps, deltaFn: fmtDelta, format: (v) => v.toLocaleString(), color: 'bg-purple-500' },
+              { label: 'Files', rows: fileRows, baseline: baselineFiles, deltaFn: fmtDelta, format: (v) => v.toLocaleString(), color: 'bg-green-500' },
             ].map((m) => (
               <div key={m.label}>
                 <h3 className="text-sm font-semibold text-white mb-2">{m.label}</h3>
@@ -125,6 +154,13 @@ export default function CompareModal({ ids = [], onClose }) {
                         <div className={`${m.color} h-full transition-all`} style={{ width: `${row.pct}%` }} />
                       </div>
                       <span className="text-xs text-white w-16 text-right">{m.format(row.raw)}</span>
+                      {row.idx > 0 && (
+                        <span className={`text-xs w-14 text-right font-mono ${
+                          row.raw > m.baseline ? 'text-green-400' : row.raw < m.baseline ? 'text-red-400' : 'text-gray-500'
+                        }`}>
+                          {m.deltaFn(m.baseline, row.raw)}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

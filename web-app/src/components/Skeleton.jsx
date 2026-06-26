@@ -24,7 +24,7 @@ export function SkeletonText({ lines = 1, className = '' }) {
 
 export function SkeletonStat() {
   return (
-    <div className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+    <div role="status" aria-busy="true" className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
       <div className="flex items-center justify-between">
         <div className="flex-1 space-y-2">
           <div className={`${baseShimmer} h-3 w-24 rounded`} />
@@ -38,7 +38,7 @@ export function SkeletonStat() {
 
 export function SkeletonTable({ rows = 8, columns = 5 }) {
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div role="status" aria-busy="true" className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-900">
@@ -69,7 +69,7 @@ export function SkeletonTable({ rows = 8, columns = 5 }) {
 
 export function SkeletonCard() {
   return (
-    <div className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700 space-y-3">
+    <div role="status" aria-busy="true" className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700 space-y-3">
       <div className={`${baseShimmer} h-4 w-1/3 rounded`} />
       <div className={`${baseShimmer} h-8 w-1/2 rounded`} />
       <div className={`${baseShimmer} h-3 w-2/3 rounded`} />
@@ -78,12 +78,12 @@ export function SkeletonCard() {
 }
 
 export function SkeletonChart({ height = 200 }) {
-  return <div className={`${baseShimmer} rounded`} style={{ height }} />;
+  return <div role="status" aria-busy="true" className={`${baseShimmer} rounded`} style={{ height }} />;
 }
 
 export function SkeletonDonut({ size = 160 }) {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+    <div role="status" aria-busy="true" className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <div className={`${baseShimmer} rounded-full`} style={{ width: size, height: size }} />
       <div
         className="absolute inset-0 flex items-center justify-center"
