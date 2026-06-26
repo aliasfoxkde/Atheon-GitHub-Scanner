@@ -572,14 +572,17 @@ export default function Reports() {
           <div className="relative">
             <button
               onClick={(e) => { e.stopPropagation(); setShowColPicker((v) => !v) }}
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors flex items-center gap-1.5"
               aria-label="Toggle column visibility"
+              aria-haspopup="menu"
+              aria-expanded={showColPicker}
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors flex items-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>
               Columns
             </button>
             {showColPicker && (
               <div className="absolute z-50 top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-3 min-w-40"
+                role="menu"
                 onClick={(e) => e.stopPropagation()}>
                 {[
                   { key: 'showStars', label: '⭐ Stars' },

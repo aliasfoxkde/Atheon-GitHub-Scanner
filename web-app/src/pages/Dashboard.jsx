@@ -197,6 +197,7 @@ const Dashboard = () => {
         clearInterval(tick);
       };
     }
+    // When autoRefresh is off (seconds === 0), still abort on unmount
     return () => {
       controller.abort();
     };
