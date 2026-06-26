@@ -30,6 +30,7 @@ export default function ThemeToggle() {
       className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-all duration-200"
       title={`Theme: ${label} — click to cycle`}
       aria-label={`Theme: ${label}, click to change`}
+      aria-haspopup="menu"
     >
       {icon}
     </button>

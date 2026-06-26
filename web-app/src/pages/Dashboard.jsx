@@ -79,7 +79,8 @@ const Dashboard = () => {
       const response = await loadRealScannerData(signal);
       if (!response) throw new Error('No data received from scanner');
 
-      const data = response.data || response;
+      const data = (response.data || response);
+      if (!data) throw new Error('No data available');
 
       // Compute quality score distribution buckets (0-10, 10-20, ..., 90-100)
       const allScores = (data.recent_scans || []).map((s) => s.quality_score || 0);

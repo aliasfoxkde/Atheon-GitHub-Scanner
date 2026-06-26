@@ -10,35 +10,67 @@ import { loadRealScannerData } from '../services/realScannerData'
 const SEV_COLORS = { critical: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#22c55e', info: '#3b82f6' }
 const SEV_BG = { critical: 'bg-red-500/10', high: 'bg-orange-500/10', medium: 'bg-yellow-500/10', low: 'bg-blue-500/10', info: 'bg-gray-500/10' }
 
+// Helper to fetch with timeout and retry
+async function fetchWithTimeout(url, options = {}, timeoutMs = 5000, retries = 2) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let lastError;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      return res;
+    } catch (e) {
+      lastError = e;
+      if (e.name === 'AbortError') throw e; // Don't retry on timeout
+    }
+  }
+  clearTimeout(timer);
+  throw lastError;
+}
+
 async function fetchNpmDeps(packageName) {
   try {
-    const res = await fetch(`https://registry.npmjs.org/${encodeURIComponent(packageName)}/latest`)
-    if (!res.ok) return null
-    const data = await res.json()
+    const res = await fetchWithTimeout(
+      `https://registry.npmjs.org/${encodeURIComponent(packageName)}/latest`
+    );
+    if (!res.ok) return { error: 'not_found' };
+    const data = await res.json();
     return {
       version: data.version,
       dependencies: data.dependencies || {},
       devDependencies: data.devDependencies || {},
-    }
-  } catch { return null }
+    };
+  } catch (e) {
+    if (e.name === 'AbortError') return { error: 'timeout' };
+    return { error: 'network' };
+  }
 }
 
 async function fetchPypiDeps(packageName) {
   try {
-    const res = await fetch(`https://pypi.org/pypi/${encodeURIComponent(packageName)}/json`)
-    if (!res.ok) return null
-    const data = await res.json()
-    const requires = data.info?.requires_dist || []
+    const res = await fetchWithTimeout(
+      `https://pypi.org/pypi/${encodeURIComponent(packageName)}/json`
+    );
+    if (!res.ok) return { error: 'not_found' };
+    const data = await res.json();
+    const requires = data.info?.requires_dist || [];
+    // Safely parse dependency names with bounded regex
+    const DEP_REGEX = /^([a-zA-Z0-9._-]{1,100})/;
     return {
       version: data.info?.version,
       dependencies: requires.reduce((acc, r) => {
-        const m = r.match(/^([a-zA-Z0-9._-]+)/)
-        if (m) acc[m[1]] = r
-        return acc
+        if (typeof r !== 'string') return acc;
+        const m = r.slice(0, 200).match(DEP_REGEX); // Limit input length
+        if (m) acc[m[1]] = r;
+        return acc;
       }, {}),
       devDependencies: {},
-    }
-  } catch { return null }
+    };
+  } catch (e) {
+    if (e.name === 'AbortError') return { error: 'timeout' };
+    return { error: 'network' };
+  }
 }
 
 export default function ReportDetail() {

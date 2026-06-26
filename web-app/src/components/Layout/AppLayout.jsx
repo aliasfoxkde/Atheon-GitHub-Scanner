@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import ThemeToggle from '../ThemeToggle';
 
@@ -6,7 +6,21 @@ const AppLayout = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = useCallback((path) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  }, [location.pathname]);
+
+  // Memoize nav items to prevent unnecessary re-renders
+  const navItems = useMemo(() => [
+    { path: '/dashboard', label: 'Dashboard' },
+    { path: '/reports', label: 'Reports' },
+    { path: '/trending', label: 'Trending' },
+    { path: '/submit', label: 'Submit' },
+    { path: '/pipeline', label: 'Pipeline' },
+    { path: '/api', label: 'API' },
+    { path: '/about', label: 'About' },
+    { path: '/settings', label: 'Settings', icon: 'settings' },
+  ], []);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">

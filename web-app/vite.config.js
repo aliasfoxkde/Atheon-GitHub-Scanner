@@ -13,7 +13,7 @@ export default defineConfig({
         lang: 'en',
         dir: 'ltr',
         name: 'Atheon Scanner',
-        short_name: 'Atheon Scanner',
+        short_name: 'Atheon',
         description: 'Automated GitHub repository scanning and quality analysis',
         theme_color: '#4f46e5',
         background_color: '#111827',

@@ -9,6 +9,21 @@ let dataCache = null;
 let dataCacheTime = 0;
 const CACHE_TTL = 60000; // 60 seconds
 
+// Polyfill for AbortSignal.any (not supported in all browsers)
+function abortSignalAny(signals) {
+  if (AbortSignal.any) {
+    return AbortSignal.any(signals);
+  }
+  // Fallback: combine signals manually
+  const controller = new AbortController();
+  const abortHandler = () => controller.abort();
+  signals.forEach((s) => s?.addEventListener('abort', abortHandler));
+  controller.signal.addEventListener('abort', () => {
+    signals.forEach((s) => s?.removeEventListener('abort', abortHandler));
+  });
+  return controller.signal;
+}
+
 async function loadEmbeddedData(signal) {
   const now = Date.now();
   if (dataCache && (now - dataCacheTime) < CACHE_TTL) {
@@ -17,7 +32,7 @@ async function loadEmbeddedData(signal) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
   const combinedSignal = signal
-    ? AbortSignal.any([controller.signal, signal])
+    ? abortSignalAny([controller.signal, signal])
     : controller.signal;
   try {
     const response = await fetch(EMBEDDED_DATA_URL, { signal: combinedSignal });
@@ -39,7 +54,7 @@ class ApiService {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15_000);
     const combinedSignal = signal
-      ? AbortSignal.any([controller.signal, signal])
+      ? abortSignalAny([controller.signal, signal])
       : controller.signal;
     const config = {
       ...options,
