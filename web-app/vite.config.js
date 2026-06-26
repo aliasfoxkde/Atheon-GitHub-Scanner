@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import checker from 'vite-plugin-checker'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    checker({ typescript: true, overlay: true }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/**/*.svg', 'icons/**/*.png'],
@@ -56,6 +58,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
         maximumFileSizeToCacheInBytes: 500 * 1024, // 500 KB - prevents 2.4MB embedded-data.json from being precached
+        navigateFallback: '/offline.html',
         navigateFallbackDenylist: [
           /^\/api\//,
           /^\/sw\.js$/,

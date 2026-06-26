@@ -10,7 +10,10 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(your-module-name)/)',
   ],
-  testMatch: ['**/unit-tests/**/*.spec.{js,jsx}'],
+  testMatch: [
+    '**/src/**/*.test.{js,jsx}',
+    '!**/unit-tests/**',
+  ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',
     '!src/main.jsx',
