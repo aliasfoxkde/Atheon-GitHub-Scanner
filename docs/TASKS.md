@@ -13,17 +13,17 @@
 - [x] Add global search to Dashboard (Cmd/Ctrl+K)
 - [x] Fix stop hook JSON validation error
 - [x] Commit, push, and deploy latest build
-- [x] Deep audit of web-app for gaps/issues
-- [x] Fix critical/high/medium audit findings (memory leak, toggle bug, silent failures, aria labels)
+- [x] Deep audit of web-app for gaps/issues (43 issues found)
+- [x] Fix critical/high/medium audit findings
+- [x] Add TypeScript support (tsconfig, vite-plugin-checker)
+- [x] Add unit tests (39 tests passing)
+- [x] Add PWA offline fallback (offline.html)
+- [x] Add robots.txt
+- [x] Add browserconfig.xml
+- [x] Add Lighthouse audit script
+- [x] Push and deploy
 
-## Pending (Lower Priority)
-- [ ] PWA install prompt / beforeinstallprompt handling
-- [ ] Offline banner when navigator.onLine === false
-- [ ] Add more E2E tests for uncovered features
-- [ ] Performance optimization (code splitting, lazy loading)
-- [ ] Migrate to TypeScript (from JavaScript)
-- [ ] Lighthouse audit (target 90+ Performance, 95+ Accessibility)
-
-## Known Issues (Low Priority - Tracked)
-- SettingsContext writes to localStorage on every change (acceptable for small settings object)
-- CompareModal may refetch when ids array reference changes (low-frequency interaction)
+## Pending (Future Work)
+- [ ] PWA push notifications / background sync
+- [ ] Run Lighthouse CI in CI/CD pipeline
+- [ ] Add sitemap.xml generation
