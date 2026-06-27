@@ -20,14 +20,15 @@
 - [x] Offline-capable (embedded data + runtime caching)
 - [x] AbortSignal for cancellable fetches
 - [x] TypeScript support (tsconfig, vite-plugin-checker)
-- [x] Vite build optimization (chunkSizeWarningLimit, sourcemaps off)
+- [x] Vite build optimization (chunkSizeWarningLimit: 1000→500, sourcemaps off)
 
 ### Testing & CI/CD
-- [x] Add unit tests (39 passing — colors, date, ToastContext, SettingsContext, useKeyboardShortcuts)
-- [x] Add E2E tests (8 Playwright specs: basic-ui, compare-modal, filter-validation, keyboard-shortcuts, new-features, reports-filters, settings, user-flows)
-- [x] Add GitHub Actions CI (web-app-ci.yml — unit tests + build on push/PR)
-- [x] Add Lighthouse CI workflow on master push
-- [x] Add Lighthouse audit script (scripts/lighthouse-audit.js)
+- [x] Unit tests: 84 passing (ThemeContext, ErrorBoundary, Skeleton, EmptyState, api.js — added 45 tests)
+- [x] E2E tests: 182 passing (About, ApiDocs, NotFound, Pipeline, ReportDetail pages — added 5 new spec files)
+- [x] GitHub Actions CI (web-app-ci.yml — lint + unit + Playwright + build on PR)
+- [x] Lighthouse CI workflow on master push (perf≥0.85, FCP/LCP/interactive→error, interactive≤3000ms)
+- [x] ESLint v9 flat config + Prettier + husky/lint-staged pre-commit hooks
+- [x] Remove lint.spec.js from Playwright (ESLint belongs in CI/pre-commit)
 
 ### PWA & SEO
 - [x] Add PWA offline fallback (offline.html)
@@ -52,12 +53,12 @@
 - [x] Add web-app README.md
 - [x] Fix package.json name/description/homepage/repository/keywords
 - [x] sitemap.xml fixed to cover all 7 routes
-- [x] Add docs/planning/ with SDLC, WORKFLOW, PIPELINE, DEPLOYMENT, SYSTEM_ARCHITECTURE
+- [x] Expand docs/planning/ — SDLC, WORKFLOW, DEPLOYMENT with CI pipeline, publishing, hotfix flow, release process
 
 ## Pending (Future Work)
 
 ### High Priority
-- [x] Run E2E Playwright tests (164 passing — `npm run test:e2e`)
+- [x] Run E2E Playwright tests (182 passing — `npm run test:e2e`)
 - [ ] sitemap.xml auto-generation on deploy (currently static, manual update)
 - [ ] PWA push notifications / background sync for scan submission
 
