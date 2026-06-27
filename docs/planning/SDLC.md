@@ -87,21 +87,43 @@ gh pr create --title "feat: add feature" --body "Description"
 
 ## CI/CD Pipeline
 
-### GitHub Actions (`.github/workflows/web-app-ci.yml`)
+### GitHub Actions Workflows
+
+**`.github/workflows/web-app-ci.yml`** — runs on PR to `web-app/**` and push to `master`:
 
 ```
-push to master
+PR / push to web-app/**
   │
-  ├─► unit-tests (Jest) ─────────────────────────────────┐
-  │                                                          │
-  └─► build (Vite) ──► lighthouse (master only) ──► done  │
-                                                               
-PR to master
-  │
-  └─► unit-tests ──► build ──► done
+  ├─► lint        (ESLint + Prettier, --max-warnings 999)
+  ├─► test        (Jest unit tests)
+  ├─► Playwright  (E2E tests — full suite)
+  └─► build       (Vite production build)
 ```
 
-### Pre-Push Hooks (local)
+**`.github/workflows/lighthouse.yml`** — runs on push to `master` when `src/**`, `public/**`, `vite.config.js`, or `.lighthouserc.json` change:
+
+```
+push to master (src changes)
+  │
+  └─► Lighthouse CI audit
+        ├─► 3 runs against https://atheon-scanner.pages.dev
+        ├─► Assert: perf≥0.85, a11y≥0.9, bp≥0.9, seo≥0.9
+        ├─► FCP ≤2000ms, LCP ≤4000ms, TBT ≤500ms, CLS ≤0.1
+        └─► interactive ≤3000ms
+        └─► Upload HTML report as artifact
+```
+
+### Pre-Commit Hooks (local via husky + lint-staged)
+
+```
+git commit
+  └─► .husky/pre-commit
+        └─► npx lint-staged
+              ├─► eslint --fix src/**/*.js,jsx
+              └─► prettier --write src/**/*.{js,jsx,css}
+```
+
+### Pre-Push Hooks (local, .claude/hooks/)
 
 `.claude/hooks/` (project-level):
 - `path-boundary-hook.py` — prevents writes outside project root
@@ -153,14 +175,60 @@ Issues filed at: https://github.com/aliasfoxkde/Atheon-Scanner/issues
 
 ## Release Process
 
-1. All features for a release are in `master`
-2. Deployment happens automatically on push to `master`
-3. No formal release notes (use git log for changelog)
-4. For significant releases, add a git tag:
-   ```bash
-   git tag -a v1.1.0 -m "Add compare modal and keyboard shortcuts"
-   git push origin v1.1.0
-   ```
+Deployment is **automatic on every push to `master`** via GitHub Actions.
+
+### Environments
+
+| Environment | URL | Trigger |
+|------------|-----|---------|
+| Production | https://atheon-scanner.pages.dev | push to `master` |
+| Preview (PR) | `https://<hash>.atheon-scanner.pages.dev` | PR merge |
+
+### Versioning Strategy
+
+The app uses **git tags** for meaningful release markers:
+
+```bash
+# Tag current commit
+git tag -a v1.1.0 -m "feat: add compare modal and keyboard shortcuts"
+git push origin v1.1.0
+
+# List tags
+git tag --sort=-v:refname | head -10
+
+# Create retro-active tag from last commit
+git tag -a v1.0.0 <sha> -m "Initial production deployment"
+```
+
+Embedded data uses **date-based versioning** (`last_updated` field) — no formal version bump needed for data updates.
+
+### Publishing npm Package (scanner engine only)
+
+The `Atheon Enhanced` CLI is published separately to npm:
+
+```bash
+# 1. Update version in package.json
+npm version patch  # or minor, major
+
+# 2. Build and publish
+cd Atheon-Enhanced
+npm publish --access public
+
+# 3. Create and push git tag
+git tag -a cli/v1.2.0 -m "Release v1.2.0"
+git push origin cli/v1.2.0
+```
+
+### Hotfix Flow
+
+```bash
+# Create hotfix branch from master
+git checkout -b fix/critical-bug master
+# Fix, commit, push
+git push -u origin fix/critical-bug
+# Open PR → CI passes → squash-merge to master
+# Deployment auto-triggers
+```
 
 ## Rollback
 

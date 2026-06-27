@@ -94,27 +94,26 @@ Before `git push`, these run locally:
 
 ### GitHub Actions
 
-**`web-app-ci.yml`** — runs on every push to `web-app/`:
-1. `test-unit` — Jest unit tests
-2. `build` — Vite production build
-3. `lighthouse` (master only) — Lighthouse CI audit
+**`.github/workflows/web-app-ci.yml`** — triggers on PR to `web-app/**` and push to `master`:
+1. `lint` — ESLint + Prettier check
+2. `test` — Jest unit tests + Playwright E2E tests
+3. `build` — Vite production build + artifact upload
 
-**`lighthouse.yml`** (in web-app):
+**`.github/workflows/lighthouse.yml`** — triggers on push to `master` when `src/**`, `public/**`, `vite.config.js`, `.lighthouserc.json` change:
 1. Builds web app
-2. Runs Lighthouse against deployed preview
-3. Enforces budget thresholds
+2. Runs Lighthouse CI against production URL (3 runs)
+3. Enforces budget thresholds (perf≥0.85, a11y≥0.9, bp≥0.9, seo≥0.9)
 4. Uploads HTML report as artifact
 
 ### Local Validation Commands
 
 ```bash
-# Before commit — run all checks
-make doctor
-
-# Which runs:
-npm run test:unit     # Jest tests
-npm run build         # Vite build
-uv run ruff check     # Python lint (if applicable)
+# Before commit — lint-staged runs automatically via husky pre-commit
+# To run manually:
+npm run lint        # ESLint + fix
+npm run test:unit  # Jest tests
+npm run build      # Vite build
+```
 
 # Before push
 git push origin master
@@ -218,10 +217,11 @@ npm run test:e2e:performance
 
 | Gate | Tool | Threshold |
 |------|------|-----------|
-| Unit tests | Jest | 39+ passing |
+| Unit tests | Jest | 80+ passing |
+| Lint | ESLint v9 | 0 errors |
 | Build | Vite | 0 errors |
 | Bundle size | Vite | < 1MB per chunk |
 | Complexity | pre-push hook | functions < 50 lines |
-| Lighthouse Perf | CI | ≥ 80 |
+| Lighthouse Perf | CI | ≥ 85 |
 | Lighthouse A11y | CI | ≥ 90 |
 | Lighthouse SEO | CI | ≥ 90 |
