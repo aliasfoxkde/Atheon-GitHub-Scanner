@@ -220,7 +220,7 @@ const Dashboard = () => {
     const agoInterval = setInterval(updateTimeAgo, 60000);
     return () => clearInterval(agoInterval);
     // Only depends on stats.lastUpdated for initial value; interval self-corrects via closure
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [stats.lastUpdated]);
 
   // Global search (debounced)

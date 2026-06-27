@@ -16,7 +16,7 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo });
-    // eslint-disable-next-line no-console
+     
     console.error('ErrorBoundary caught:', error, errorInfo);
   }
 
@@ -42,7 +42,7 @@ export default class ErrorBoundary extends Component {
             <p className="text-gray-400 mb-6">
               {this.state.error?.message || 'An unexpected error occurred while rendering this page.'}
             </p>
-            {process.env.NODE_ENV !== 'production' && this.state.errorInfo && (
+            {import.meta.env.DEV && this.state.errorInfo && (
               <details className="text-left bg-gray-900 rounded p-3 mb-4 text-xs text-gray-400 max-h-40 overflow-auto">
                 <summary className="cursor-pointer text-gray-300 mb-2">Stack trace</summary>
                 <pre className="whitespace-pre-wrap">{this.state.errorInfo.componentStack}</pre>

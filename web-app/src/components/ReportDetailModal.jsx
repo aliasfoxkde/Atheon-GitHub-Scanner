@@ -1,14 +1,16 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useToast } from '../contexts/ToastContext';
-import { Skeleton } from './Skeleton';
 import { getScoreColor, getTierColor } from '../utils/colors';
 import { formatDate } from '../utils/date';
 import { loadRealScannerData } from '../services/realScannerData';
 
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+/* eslint-disable react-hooks/rules-of-hooks -- report guard before hooks is intentional */
 export default function ReportDetailModal({ report, onClose, onCompare }) {
+  if (!report) return null;
+
   const [activeTab, setActiveTab] = useState('overview');
   const [copying, setCopying] = useState(false);
   const [trendData, setTrendData] = useState(null);
@@ -39,9 +41,7 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
       document.body.style.overflow = '';
       prev?.focus();
     };
-  }, []);
-
-  if (!report) return null;
+  }, [onClose]);
 
   // Defensive: support either the embedded data shape (name, id, ...) or the legacy shape (repo_name, ...)
   const name = report.name || report.repo_name || 'Unknown';

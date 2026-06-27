@@ -153,7 +153,7 @@ class AnalyticsService {
       if (!response.ok) {
         console.warn('Analytics send failed:', await response.text());
       }
-    } catch (error) {
+    } catch {
       // Store for later if offline
       console.log('Analytics event stored (offline):', event);
       this.storeOfflineEvent(event);

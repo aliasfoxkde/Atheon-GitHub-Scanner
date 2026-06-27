@@ -72,13 +72,13 @@ function App() {
     const { outcome } = await installPromptEvent.userChoice;
     setInstallPromptEvent(null);
     setShowInstallBanner(false);
-    try { localStorage.setItem('atheon_install_dismissed', '1'); } catch {}
+    try { localStorage.setItem('atheon_install_dismissed', '1'); } catch { /* ignore */ }
     if (outcome === 'accepted') { /* PWA installed */ }
   };
 
   const dismissInstall = () => {
     setShowInstallBanner(false);
-    try { localStorage.setItem('atheon_install_dismissed', '1'); } catch {}
+    try { localStorage.setItem('atheon_install_dismissed', '1'); } catch { /* ignore */ }
   };
 
   return (
@@ -92,7 +92,7 @@ function App() {
           <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728M5.636 18.364a9 9 0 010-12.728M12 9v4m0 4h.01" />
           </svg>
-          <span>You're offline. Showing cached data.</span>
+          <span>You&apos;re offline. Showing cached data.</span>
         </div>
       )}
 

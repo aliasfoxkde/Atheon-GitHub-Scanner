@@ -87,40 +87,6 @@ export default function Reports() {
   // Debounce ref for search input
   const searchDebounceRef = useRef(null)
 
-  useEffect(() => {
-    if (abortRef.current) abortRef.current.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-    fetchReports(controller.signal)
-    return () => controller.abort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, pagination.page, pagination.perPage, settings.defaultPageSize])
-
-  // Load available filter options from real data
-  useEffect(() => {
-    let cancelled = false
-    loadRealScannerData().then((data) => {
-      if (cancelled) return
-      const langs = Object.keys(data.language_distribution || {}).sort()
-      setAvailableLanguages(langs)
-      const tiers = Object.keys(data.tier_distribution || {}).sort((a, b) => (TIER_SCORE[a] ?? 9) - (TIER_SCORE[b] ?? 9))
-      setAvailableTiers(tiers.length ? tiers : ['A', 'B', 'C', 'D', 'F'])
-    }).catch(() => {})
-    return () => { cancelled = true }
-  }, [])
-
-  // Sync defaultPageSize changes into pagination
-  useEffect(() => {
-    setPagination((p) => ({ ...p, perPage: settings.defaultPageSize, page: 1 }))
-  }, [settings.defaultPageSize])
-
-  // Open compare mode when ?compare=true is in URL
-  useEffect(() => {
-    if (searchParams.get('compare') === 'true') {
-      setShowCompare(true)
-    }
-  }, [searchParams])
-
   const fetchReports = async (signal) => {
     try {
       setLoading(true)
@@ -155,6 +121,41 @@ export default function Reports() {
       setLoading(false)
     }
   }
+
+  // Fetch on filter / pagination changes
+  useEffect(() => {
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    fetchReports(controller.signal)
+    return () => controller.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, pagination.page, pagination.perPage, settings.defaultPageSize])
+
+  // Load available filter options from real data
+  useEffect(() => {
+    let cancelled = false
+    loadRealScannerData().then((data) => {
+      if (cancelled) return
+      const langs = Object.keys(data.language_distribution || {}).sort()
+      setAvailableLanguages(langs)
+      const tiers = Object.keys(data.tier_distribution || {}).sort((a, b) => (TIER_SCORE[a] ?? 9) - (TIER_SCORE[b] ?? 9))
+      setAvailableTiers(tiers.length ? tiers : ['A', 'B', 'C', 'D', 'F'])
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  // Sync defaultPageSize changes into pagination
+  useEffect(() => {
+    setPagination((p) => ({ ...p, perPage: settings.defaultPageSize, page: 1 }))
+  }, [settings.defaultPageSize])
+
+  // Open compare mode when ?compare=true is in URL
+  useEffect(() => {
+    if (searchParams.get('compare') === 'true') {
+      setShowCompare(true)
+    }
+  }, [searchParams])
 
   const sortedReports = useMemo(() => {
     let result = reports

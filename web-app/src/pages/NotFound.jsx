@@ -8,7 +8,7 @@ export default function NotFound() {
       </div>
       <h1 className="text-3xl font-bold text-white mt-4">Page not found</h1>
       <p className="text-gray-400 mt-2 max-w-md">
-        We couldn't find what you were looking for. The page may have been moved or never existed.
+        We couldn&apos;t find what you were looking for. The page may have been moved or never existed.
       </p>
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
         <Link

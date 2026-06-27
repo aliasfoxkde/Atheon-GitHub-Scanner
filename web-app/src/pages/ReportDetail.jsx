@@ -706,7 +706,7 @@ function DependenciesPanel({ report, lang }) {
   if (totalEntries === 0) return (
     <div className="bg-gray-900 rounded-lg p-6 text-center text-gray-400 border border-gray-700">
       <div className="text-4xl mb-3">📦</div>
-      <p>No dependencies recorded for "{pkgName}"</p>
+      <p>No dependencies recorded for &quot;{pkgName}&quot;</p>
     </div>
   )
 

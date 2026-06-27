@@ -467,7 +467,7 @@ export default function Pipeline() {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-40 text-gray-300 text-sm border border-gray-700 rounded-lg">
-                      Click "Load live stats" to see real findings
+                      Click &quot;Load live stats&quot; to see real findings
                     </div>
                   )}
                 </div>
