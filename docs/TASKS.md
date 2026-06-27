@@ -67,7 +67,7 @@
 - [ ] Add search autocomplete with debounce visualization
 - [x] Add data refresh indicator (last-updated timestamp with countdown)
 - [x] Improve print stylesheet (add ReportDetail print view)
-- [ ] Add `/api` page with interactive API explorer
+- [x] Add `/api` page with interactive API explorer
 
 ### Low Priority / Nice-to-Have
 - [x] Custom scrollbar styling
