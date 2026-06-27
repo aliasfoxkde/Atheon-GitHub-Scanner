@@ -5,7 +5,7 @@
 ### Deployment
 - Deployed to https://efa77391.atheon-scanner.pages.dev (latest)
 - Git remote: https://github.com/aliasfoxkde/Atheon-Scanner
-- Commits pushed: 5ad213df → 5d7212d8
+- Commits pushed: 5ad213df → b5d1ed08 (12 new commits this session)
 
 ### Stop Hook Fix
 - Fixed `outcome-analyzer.py` to always output valid JSON
@@ -46,3 +46,15 @@ Conducted full source code audit. Fixed:
 - 4 new E2E tests + 39 unit tests
 - sitemap.xml fixed, robots.txt updated
 - package.json cleanup (name, homepage, repository, keywords)
+
+### Planning Docs (2026-06-27)
+Created `docs/planning/` with 5 comprehensive documents:
+- **SYSTEM_ARCHITECTURE.md** — tech stack, routing, PWA, state management, security
+- **SDLC.md** — branch strategy, commit conventions, PR workflow, versioning
+- **WORKFLOW.md** — git hooks, Claude Code sessions, CI/CD automation
+- **PIPELINE.md** — data pipeline (scanner → embedded data → build → deploy)
+- **DEPLOYMENT.md** — Cloudflare Pages, CI/CD, rollback, monitoring
+- **README.md** — planning docs index
+
+### Git Remote & Commits
+- Commits pushed: 5ad213df → b5d1ed08 (12 new commits this session)
