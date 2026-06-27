@@ -24,7 +24,7 @@
 
 ### Testing & CI/CD
 - [x] Unit tests: 84 passing (ThemeContext, ErrorBoundary, Skeleton, EmptyState, api.js — added 45 tests)
-- [x] E2E tests: 182 passing (About, ApiDocs, NotFound, Pipeline, ReportDetail pages — added 5 new spec files)
+- [x] E2E tests: 353 passing (desktop + mobile Playwright, 5 new spec files)
 - [x] GitHub Actions CI (web-app-ci.yml — lint + unit + Playwright + build on PR)
 - [x] Lighthouse CI workflow on master push (perf≥0.85, FCP/LCP/interactive→error, interactive≤3000ms)
 - [x] ESLint v9 flat config + Prettier + husky/lint-staged pre-commit hooks
@@ -34,7 +34,7 @@
 - [x] Add PWA offline fallback (offline.html)
 - [x] Add manifest (vite-plugin-pwa auto-generates)
 - [x] Add robots.txt
-- [x] Add sitemap.xml (7 routes)
+- [x] Add sitemap.xml (7 routes, auto-generated on build)
 - [x] Add browserconfig.xml (Windows tile)
 - [x] Add print stylesheet (print.css)
 
@@ -58,9 +58,9 @@
 ## Pending (Future Work)
 
 ### High Priority
-- [x] Run E2E Playwright tests (182 passing — `npm run test:e2e`)
-- [ ] sitemap.xml auto-generation on deploy (currently static, manual update)
-- [ ] PWA push notifications / background sync for scan submission
+- [x] Run E2E Playwright tests (353 passing — `npm run test:e2e` incl. mobile)
+- [x] sitemap.xml auto-generation on deploy (scripts/generate-sitemap.js)
+- [x] PWA background sync for offline scan submissions (src/utils/backgroundSync.js)
 
 ### Medium Priority
 - [x] Convert pages to React.lazy + Suspense for route-level code splitting
@@ -71,10 +71,10 @@
 - [x] Add `/api` page with interactive API explorer
 
 ### Low Priority / Nice-to-Have
-- [x] Custom scrollbar styling
+- [x] Custom scrollbar styling (CSS variables, Firefox support)
 - [x] `prefers-reduced-motion` media query check
 - [x] Apple touch icon (uses icon-192.svg)
-- [ ] Animated page transitions
-- [ ] Favicon.ico fallback for very old browsers
-- [ ] Add `lang` attribute dynamic update for i18n readiness
-- [ ] Add changelog entry for web-app releases
+- [x] Animated page transitions (framer-motion AnimatePresence)
+- [x] Favicon.ico fallback for very old browsers (24-byte valid ICO)
+- [x] Add `lang` attribute dynamic update for i18n readiness
+- [x] Add changelog entry for web-app releases (CHANGELOG.md v1.0.0)
