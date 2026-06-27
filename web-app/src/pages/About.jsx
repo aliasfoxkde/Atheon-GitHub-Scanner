@@ -196,7 +196,7 @@ export default function About() {
               }`} />
               <div>
                 <div className="text-white text-xs font-medium">{l.label}</div>
-                <div className="text-xs text-gray-400 mt-0.5" dangerouslySetInnerHTML={{ __html: l.desc }} />
+                <div className="text-xs text-gray-400 mt-0.5">{l.desc}</div>
               </div>
             </div>
           ))}

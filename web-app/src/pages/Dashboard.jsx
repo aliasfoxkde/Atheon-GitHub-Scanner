@@ -182,18 +182,6 @@ const Dashboard = () => {
     const seconds = Number(settings.autoRefreshInterval) || 0;
     setCountdown(seconds);
 
-    // Update "time ago" every minute
-    const updateTimeAgo = () => {
-      if (!stats.lastUpdated) return;
-      const diff = Math.floor((Date.now() - new Date(stats.lastUpdated).getTime()) / 1000);
-      if (diff < 60) setTimeAgo('just now');
-      else if (diff < 3600) setTimeAgo(`${Math.floor(diff / 60)}m ago`);
-      else if (diff < 86400) setTimeAgo(`${Math.floor(diff / 3600)}h ago`);
-      else setTimeAgo(`${Math.floor(diff / 86400)}d ago`);
-    };
-    updateTimeAgo();
-    const agoInterval = setInterval(updateTimeAgo, 60000);
-
     if (seconds > 0) {
       const tick = setInterval(() => {
         setCountdown((c) => {
@@ -209,16 +197,31 @@ const Dashboard = () => {
       return () => {
         controller.abort();
         clearInterval(tick);
-        clearInterval(agoInterval);
       };
     }
-    // When autoRefresh is off (seconds === 0), still abort on unmount
     return () => {
       controller.abort();
-      clearInterval(agoInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.autoRefreshInterval, stats.lastUpdated]);
+  }, [settings.autoRefreshInterval]);
+
+  // Separate effect for "time ago" — runs independently, no stale closure
+  useEffect(() => {
+    const updateTimeAgo = () => {
+      const lu = stats.lastUpdated;
+      if (!lu) return;
+      const diff = Math.floor((Date.now() - new Date(lu).getTime()) / 1000);
+      if (diff < 60) setTimeAgo('just now');
+      else if (diff < 3600) setTimeAgo(`${Math.floor(diff / 60)}m ago`);
+      else if (diff < 86400) setTimeAgo(`${Math.floor(diff / 3600)}h ago`);
+      else setTimeAgo(`${Math.floor(diff / 86400)}d ago`);
+    };
+    updateTimeAgo();
+    const agoInterval = setInterval(updateTimeAgo, 60000);
+    return () => clearInterval(agoInterval);
+    // Only depends on stats.lastUpdated for initial value; interval self-corrects via closure
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stats.lastUpdated]);
 
   // Global search (debounced)
   useEffect(() => {

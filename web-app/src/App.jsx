@@ -73,7 +73,7 @@ function App() {
     setInstallPromptEvent(null);
     setShowInstallBanner(false);
     try { localStorage.setItem('atheon_install_dismissed', '1'); } catch {}
-    if (outcome === 'accepted') console.log('PWA installed');
+    if (outcome === 'accepted') { /* PWA installed */ }
   };
 
   const dismissInstall = () => {

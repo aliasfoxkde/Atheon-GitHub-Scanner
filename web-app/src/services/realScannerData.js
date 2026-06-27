@@ -4,6 +4,18 @@
 const WORKER_API_URL = import.meta.env.VITE_WORKER_API_URL || 'https://atheon-scanner-api.workers.dev';
 const EMBEDDED_DATA_URL = import.meta.env.VITE_EMBEDDED_DATA_URL || '/embedded-data.json';
 
+// Polyfill for AbortSignal.any (not supported in Safari, older Edge)
+function abortSignalAny(signals) {
+  if (typeof AbortSignal.any === 'function') return AbortSignal.any(signals);
+  // Fallback: composite signal that aborts when ANY signal aborts
+  const controller = new AbortController();
+  signals.forEach((s) => {
+    if (s.aborted) { controller.abort(); return; }
+    s.addEventListener('abort', () => controller.abort(), { once: true });
+  });
+  return controller.signal;
+}
+
 // Module-level cache with TTL
 let _cache = null;
 let _cacheTime = 0;
@@ -17,7 +29,7 @@ async function fetchWithCache(url, ttlMs, signal) {
   const timer = setTimeout(() => controller.abort(), 10_000);
   // Merge external signal so callers can cancel
   const combinedSignal = signal
-    ? AbortSignal.any([controller.signal, signal])
+    ? abortSignalAny([controller.signal, signal])
     : controller.signal;
   try {
     const res = await fetch(url, { signal: combinedSignal });
@@ -152,7 +164,7 @@ export const checkApiHealth = async (signal) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
   const combinedSignal = signal
-    ? AbortSignal.any([controller.signal, signal])
+    ? abortSignalAny([controller.signal, signal])
     : controller.signal;
   try {
     const response = await fetch(EMBEDDED_DATA_URL, { signal: combinedSignal });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import pkg from '../../package.json';
@@ -19,14 +19,17 @@ export default function Settings() {
   const toast = useToast();
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const resetTimerRef = useRef(null);
   const handleReset = () => {
     if (showResetConfirm) {
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
       reset();
       toast.success('Settings reset to defaults');
       setShowResetConfirm(false);
     } else {
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
       setShowResetConfirm(true);
-      setTimeout(() => setShowResetConfirm(false), 4000);
+      resetTimerRef.current = setTimeout(() => setShowResetConfirm(false), 4000);
     }
   };
 
