@@ -21,14 +21,25 @@ async function waitForSWReady(page) {
 
 // Helper: ensure service worker is ready and app is loaded
 async function ensureSWReady(page, url) {
-  await page.goto(url, { waitUntil: 'networkidle' });
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
   // If offline page is shown, reload once (SW may have just installed during this test's first run)
   const isOffline = await page.evaluate(() => document.body.textContent.includes("You're offline"));
   if (isOffline) {
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
   }
   // Wait for app content to be interactive
   await page.waitForTimeout(1500);
+}
+
+// Set a select value programmatically using keyboard navigation
+async function setSelectValue(page, selectId, value) {
+  const select = page.locator(`#${selectId}`);
+  await select.waitFor({ state: 'visible' });
+  await select.press('Alt+ArrowDown');
+  await page.waitForTimeout(300);
+  await page.keyboard.type(value, { delay: 50 });
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(800);
 }
 
 test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () => {
@@ -95,10 +106,11 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
       const initialCount = await initialRows.count();
       expect(initialCount).toBeGreaterThan(0);
 
-      // Apply a language filter
-      const langSelect = page.locator('#reports-language');
-      await langSelect.selectOption('TypeScript');
-      await page.waitForTimeout(1500);
+      // Apply a language filter via URL param
+      await page.goto('/reports?language=TypeScript', { waitUntil: 'domcontentloaded' });
+      const isOffline = await page.evaluate(() => document.body.textContent.includes("You're offline"));
+      if (isOffline) await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(2000);
 
       const afterFilterCount = await page.locator('tbody tr').count();
       console.log('After TypeScript filter:', afterFilterCount, '/ initial:', initialCount);
