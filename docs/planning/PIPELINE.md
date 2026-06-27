@@ -223,15 +223,15 @@ When scanner data is updated:
 # 1. Run scanners (in /nas/.../agents/)
 python quality_audit_system.py
 
-# 2. Regenerate embedded-data.json
+# 2. Merge all JSONL results into embedded-data.json
 cd web-app
-node ../scripts/regenerate-data.cjs
+node scripts/merge-scanner-data.cjs
 
 # 3. Verify
-cat public/embedded-data.json | python -m json.tool | head -20
+python3 -c "import json; d=json.load(open('public/embedded-data.json')); print(f'Repos: {d[\"total_repositories\"]}, Avg: {d[\"average_quality_score\"]}, Tiers: {d[\"tier_distribution\"]}')"
 
 # 4. Commit
-git add public/embedded-data.json
+git add public/embedded-data.json scripts/merge-scanner-data.cjs
 git commit -m "chore: update embedded data (2182 repos)"
 
 # 5. Push → CI → Deploy
