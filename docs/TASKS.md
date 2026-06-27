@@ -52,6 +52,7 @@
 - [x] Add web-app README.md
 - [x] Fix package.json name/description/homepage/repository/keywords
 - [x] sitemap.xml fixed to cover all 7 routes
+- [x] Add docs/planning/ with SDLC, WORKFLOW, PIPELINE, DEPLOYMENT, SYSTEM_ARCHITECTURE
 
 ## Pending (Future Work)
 
