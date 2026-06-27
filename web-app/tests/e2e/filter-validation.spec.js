@@ -1,10 +1,18 @@
 import { test, expect } from '@playwright/test';
 
+// Helper: ensure service worker is ready and app is loaded
+async function ensureSWReady(page, url) {
+  await page.goto(url, { waitUntil: 'networkidle' });
+  const isOffline = await page.evaluate(() => document.body.textContent.includes("You're offline"));
+  if (isOffline) {
+    await page.reload({ waitUntil: 'networkidle' });
+  }
+  await page.waitForTimeout(1500);
+}
+
 test.describe('Reports Filters', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/reports');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+    await ensureSWReady(page, '/reports');
   });
 
   test('language filter shows only matching repos', async ({ page }) => {
