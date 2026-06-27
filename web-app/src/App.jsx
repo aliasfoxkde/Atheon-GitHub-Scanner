@@ -1,19 +1,35 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import AppLayout from './components/Layout/AppLayout'
 import Dashboard from './pages/Dashboard'
 import Submit from './pages/Submit'
 import Reports from './pages/Reports'
-import ApiDocs from './pages/ApiDocs'
-import Pipeline from './pages/Pipeline'
-import Trending from './pages/Trending'
-import Settings from './pages/Settings'
-import ReportDetail from './pages/ReportDetail'
-import About from './pages/About'
-import NotFound from './pages/NotFound'
+import { Skeleton } from './components/Skeleton'
 import ErrorBoundary from './components/ErrorBoundary'
 import ToastContainer from './components/Toast'
 import useKeyboardShortcuts, { ShortcutsModal } from './hooks/useKeyboardShortcuts'
+
+// Lazy-loaded route components for code splitting
+const ApiDocs = lazy(() => import('./pages/ApiDocs'))
+const Pipeline = lazy(() => import('./pages/Pipeline'))
+const Trending = lazy(() => import('./pages/Trending'))
+const Settings = lazy(() => import('./pages/Settings'))
+const ReportDetail = lazy(() => import('./pages/ReportDetail'))
+const About = lazy(() => import('./pages/About'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+
+// Suspense fallback for lazy-loaded routes
+function RouteLoader() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-64" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}
+      </div>
+      {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+    </div>
+  )
+}
 
 function App() {
   const { showHelp, setShowHelp } = useKeyboardShortcuts();
@@ -111,13 +127,13 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/submit" element={<Submit />} />
           <Route path="/reports" element={<Reports />} />
-          <Route path="/api" element={<ApiDocs />} />
-          <Route path="/pipeline" element={<Pipeline />} />
-          <Route path="/trending" element={<Trending />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/reports/:id" element={<ReportDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/api" element={<Suspense fallback={<RouteLoader />}><ApiDocs /></Suspense>} />
+          <Route path="/pipeline" element={<Suspense fallback={<RouteLoader />}><Pipeline /></Suspense>} />
+          <Route path="/trending" element={<Suspense fallback={<RouteLoader />}><Trending /></Suspense>} />
+          <Route path="/settings" element={<Suspense fallback={<RouteLoader />}><Settings /></Suspense>} />
+          <Route path="/reports/:id" element={<Suspense fallback={<RouteLoader />}><ReportDetail /></Suspense>} />
+          <Route path="/about" element={<Suspense fallback={<RouteLoader />}><About /></Suspense>} />
+          <Route path="*" element={<Suspense fallback={<RouteLoader />}><NotFound /></Suspense>} />
         </Routes>
       </ErrorBoundary>
 

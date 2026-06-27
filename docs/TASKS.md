@@ -62,10 +62,10 @@
 - [ ] PWA push notifications / background sync for scan submission
 
 ### Medium Priority
-- [ ] Convert pages to React.lazy + Suspense for route-level code splitting
+- [x] Convert pages to React.lazy + Suspense for route-level code splitting
+- [x] Add CSV/JSON import for watchlist/bookmarks
 - [ ] Add search autocomplete with debounce visualization
 - [ ] Add data refresh indicator (last-updated timestamp with countdown)
-- [ ] Add CSV/JSON import for watchlist/bookmarks
 - [ ] Improve print stylesheet (add ReportDetail print view)
 - [ ] Add `/api` page with interactive API explorer
 

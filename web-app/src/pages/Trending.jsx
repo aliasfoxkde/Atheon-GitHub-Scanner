@@ -108,6 +108,32 @@ export default function Trending() {
     }
   };
 
+  // Import watchlist from JSON file
+  const handleImportWatchlist = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result
+        let ids = []
+        try { ids = JSON.parse(text) } catch {
+          const lines = text.trim().split('\n')
+          ids = lines.map((l) => l.split(',')[0].trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+        }
+        if (!Array.isArray(ids)) throw new Error('Not an array')
+        const next = [...new Set([...watchlist, ...ids])]
+        setWatchlist(next)
+        try { localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next)) } catch {}
+        toast.success(`Imported ${ids.length} watchlist item(s)`)
+      } catch {
+        toast.error('Failed to import watchlist — invalid format')
+      }
+      e.target.value = ''
+    }
+    reader.readAsText(file)
+  };
+
   // Top watched repos: matched from allRepos against watchlist IDs
   const watchedRepos = useMemo(() => {
     if (watchlist.length === 0) return [];
@@ -150,6 +176,19 @@ export default function Trending() {
               {watchlistOverflow > 0 && (
                 <span className="text-sm text-gray-400">and {watchlistOverflow} more</span>
               )}
+              <label
+                className="text-xs text-blue-400 hover:text-blue-300 cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Import
+                <input
+                  type="file"
+                  accept=".json,.csv,.txt"
+                  className="hidden"
+                  onChange={handleImportWatchlist}
+                  aria-label="Import watchlist from file"
+                />
+              </label>
               <span className="text-gray-400">{watchlistExpanded ? '▲' : '▼'}</span>
             </div>
           </button>
