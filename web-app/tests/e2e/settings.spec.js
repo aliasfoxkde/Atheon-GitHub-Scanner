@@ -1,11 +1,21 @@
 import { test, expect } from '@playwright/test';
 
+// Helper: ensure service worker is ready and app is loaded
+async function ensureSWReady(page, url) {
+  await page.goto(url, { waitUntil: 'networkidle' });
+  // If offline page is shown, reload once (SW may have just installed during this test's first run)
+  const isOffline = await page.evaluate(() => document.body.textContent.includes("You're offline"));
+  if (isOffline) {
+    await page.reload({ waitUntil: 'networkidle' });
+  }
+  // Wait for app content to be interactive
+  await page.waitForTimeout(1500);
+}
+
 test.describe('Settings Page', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    await ensureSWReady(page, '/settings');
   });
 
   test('Settings page loads with all sections', async ({ page }) => {

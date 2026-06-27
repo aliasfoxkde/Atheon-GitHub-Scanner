@@ -1,9 +1,21 @@
 import { test, expect } from '@playwright/test';
 
+// Helper: ensure service worker is ready and app is loaded
+async function ensureSWReady(page, url) {
+  await page.goto(url, { waitUntil: 'networkidle' });
+  // If offline page is shown, reload once (SW may have just installed during this test's first run)
+  const isOffline = await page.evaluate(() => document.body.textContent.includes("You're offline"));
+  if (isOffline) {
+    await page.reload({ waitUntil: 'networkidle' });
+  }
+  // Wait for app content to be interactive
+  await page.waitForTimeout(1500);
+}
+
 test.describe('User Flow Tests', () => {
 
   test('Complete scan submission flow: home → submit → reports → detail', async ({ page }) => {
-    await page.goto('/submit');
+    await ensureSWReady(page, '/submit');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
@@ -34,8 +46,7 @@ test.describe('User Flow Tests', () => {
   });
 
   test('Bookmark → navigate away → return: bookmark persists', async ({ page }) => {
-    await page.goto('/reports');
-    await page.waitForLoadState('networkidle');
+    await ensureSWReady(page, '/reports');
     await page.waitForTimeout(2000);
 
     // Bookmark first row
@@ -194,8 +205,7 @@ test.describe('User Flow Tests', () => {
   });
 
   test('Settings: toggle preferences persist after reload', async ({ page }) => {
-    await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
+    await ensureSWReady(page, '/settings');
     await page.waitForTimeout(1000);
 
     // Change refresh interval from default

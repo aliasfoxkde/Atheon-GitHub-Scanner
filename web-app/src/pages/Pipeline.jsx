@@ -311,7 +311,6 @@ export default function Pipeline() {
       setScanStats(data)
     } catch (err) {
       toast.error('Failed to load pipeline statistics')
-      console.error('Pipeline stats error:', err)
     }
     setLoading(false)
   }

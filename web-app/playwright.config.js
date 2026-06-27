@@ -17,6 +17,7 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     headless: true,
+    serviceWorkers: 'block', // block SW to prevent offline fallback race conditions
     launchOptions: {
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },

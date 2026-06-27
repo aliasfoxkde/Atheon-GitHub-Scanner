@@ -1,5 +1,17 @@
 import { test, expect } from '@playwright/test';
 
+// Helper: ensure service worker is ready and app is loaded
+async function ensureSWReady(page, url) {
+  await page.goto(url, { waitUntil: 'networkidle' });
+  // If offline page is shown, reload once (SW may have just installed during this test's first run)
+  const isOffline = await page.evaluate(() => document.body.textContent.includes("You're offline"));
+  if (isOffline) {
+    await page.reload({ waitUntil: 'networkidle' });
+  }
+  // Wait for app content to be interactive
+  await page.waitForTimeout(1500);
+}
+
 test.describe('Security Tests', () => {
 
   test('XSS prevention: search input sanitizes script injection', async ({ page }) => {
@@ -128,8 +140,7 @@ test.describe('Security Tests', () => {
   });
 
   test('rate limit info is shown when hitting API repeatedly', async ({ page }) => {
-    await page.goto('/reports');
-    await page.waitForLoadState('networkidle');
+    await ensureSWReady(page, '/reports');
 
     // Rapid navigation (simulates aggressive polling)
     for (let i = 0; i < 5; i++) {

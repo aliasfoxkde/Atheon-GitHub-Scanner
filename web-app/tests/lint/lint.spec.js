@@ -1,11 +1,22 @@
 import { test, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 
+// Helper: ensure service worker is ready and app is loaded
+async function ensureSWReady(page, url) {
+  await page.goto(url, { waitUntil: 'networkidle' });
+  // If offline page is shown, reload once (SW may have just installed during this test's first run)
+  const isOffline = await page.evaluate(() => document.body.textContent.includes("You're offline"));
+  if (isOffline) {
+    await page.reload({ waitUntil: 'networkidle' });
+  }
+  // Wait for app content to be interactive
+  await page.waitForTimeout(1500);
+}
+
 test.describe('Code Quality — Lint & Format Checks', () => {
 
   test('src files have no ESLint errors', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await ensureSWReady(page, '/');
 
     // Run ESLint on src files
     let lintOutput = '';
@@ -28,8 +39,7 @@ test.describe('Code Quality — Lint & Format Checks', () => {
   });
 
   test('No console.error calls in production code', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await ensureSWReady(page, '/');
 
     // Search src files for console.error
     const output = execSync(

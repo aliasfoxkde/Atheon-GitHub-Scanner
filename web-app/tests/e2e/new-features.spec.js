@@ -1,6 +1,36 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 
+// Helper: wait for service worker to be ready (installed + activated + controlling)
+async function waitForSWReady(page) {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(500);
+  // Force the SW to activate by claiming the page
+  await page.evaluate(async () => {
+    if (!navigator.serviceWorker.controller) {
+      await navigator.serviceWorker.ready;
+    }
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg && reg.active) {
+      await navigator.serviceWorker.ready;
+    }
+  });
+  await page.waitForTimeout(200);
+}
+
+// Helper: ensure service worker is ready and app is loaded
+async function ensureSWReady(page, url) {
+  await page.goto(url, { waitUntil: 'networkidle' });
+  // If offline page is shown, reload once (SW may have just installed during this test's first run)
+  const isOffline = await page.evaluate(() => document.body.textContent.includes("You're offline"));
+  if (isOffline) {
+    await page.reload({ waitUntil: 'networkidle' });
+  }
+  // Wait for app content to be interactive
+  await page.waitForTimeout(1500);
+}
+
 test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () => {
 
   // --------------------------------------------------------------------------
@@ -8,8 +38,7 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
   // --------------------------------------------------------------------------
   test.describe('Bookmark feature', () => {
     test('star button bookmarks item and filter shows it, persists after reload', async ({ page }) => {
-      await page.goto('/reports');
-      await page.waitForLoadState('networkidle');
+      await ensureSWReady(page, '/reports');
       await page.waitForTimeout(2000);
 
       // Get the name from the first row (3rd td: after checkbox and star)
@@ -58,8 +87,7 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
   // --------------------------------------------------------------------------
   test.describe('Clear all filters', () => {
     test('applying language filter shows "Clear all filters" button which resets everything', async ({ page }) => {
-      await page.goto('/reports');
-      await page.waitForLoadState('networkidle');
+      await ensureSWReady(page, '/reports');
       await page.waitForTimeout(2000);
 
       // Get initial row count
@@ -76,7 +104,7 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
       console.log('After TypeScript filter:', afterFilterCount, '/ initial:', initialCount);
 
       // "Clear all filters" link should be visible
-      const clearAllBtn = page.getByRole('button', { name: 'Clear all filters' });
+      const clearAllBtn = page.getByRole('button', { name: 'Clear all active filters' });
       await expect(clearAllBtn).toBeVisible();
 
       // Click it
@@ -98,7 +126,7 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
   // --------------------------------------------------------------------------
   test.describe('Watchlist feature', () => {
     test('clicking Watch on first item shows "Top Watched" section at top; clicking × removes it', async ({ page }) => {
-      await page.goto('/trending');
+      await ensureSWReady(page, '/trending');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(2000);
 
@@ -138,7 +166,7 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
   // --------------------------------------------------------------------------
   test.describe('Dashboard search Enter key', () => {
     test('typing in dashboard search and pressing Enter navigates to /reports with q param', async ({ page }) => {
-      await page.goto('/dashboard');
+      await ensureSWReady(page, '/dashboard');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(2000);
 
@@ -170,7 +198,7 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
   // --------------------------------------------------------------------------
   test.describe('Submit scan estimate', () => {
     test('typing facebook/react in repo field and blurring shows scan estimate card', async ({ page }) => {
-      await page.goto('/submit');
+      await ensureSWReady(page, '/submit');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(1500);
 
@@ -197,7 +225,7 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
     });
 
     test('repo field without valid format does not show estimate', async ({ page }) => {
-      await page.goto('/submit');
+      await ensureSWReady(page, '/submit');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(1500);
 
@@ -217,7 +245,7 @@ test.describe('New Features - Bookmark, Watchlist, Search, Estimate, CSV', () =>
   // --------------------------------------------------------------------------
   test.describe('Export CSV injection prevention', () => {
     test('exported CSV does not have unescaped = or + at start of cells', async ({ page }) => {
-      await page.goto('/reports');
+      await ensureSWReady(page, '/reports');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(2000);
 
