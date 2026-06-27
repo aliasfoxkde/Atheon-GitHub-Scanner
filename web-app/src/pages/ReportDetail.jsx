@@ -225,6 +225,9 @@ export default function ReportDetail() {
             <button onClick={handleDownload} className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium">
               Download JSON
             </button>
+            <button onClick={() => window.print()} className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium no-print">
+              Print
+            </button>
             <button onClick={handleShare} className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium">
               Share
             </button>

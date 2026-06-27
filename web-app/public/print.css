@@ -1,7 +1,7 @@
 @media print {
   /* Hide navigation, buttons, filters, footer when printing */
   header, footer, nav, .sticky, .fixed,
-  button, .no-print,
+  button:not(a > button), .no-print,
   [aria-label="Previous"], [aria-label="Next"],
   .flex-wrap, .gap-2, .gap-3, .gap-4 {
     display: none !important;
@@ -15,13 +15,17 @@
   }
 
   .bg-gray-800, .bg-gray-900, .bg-gray-700,
-  .bg-slate-800, .bg-slate-900 {
+  .bg-slate-800, .bg-slate-900, .bg-gray-950 {
     background: white !important;
     border-color: #ddd !important;
     box-shadow: none !important;
   }
 
-  .text-white, .text-gray-300, .text-gray-400 {
+  .text-white, .text-gray-300, .text-gray-400, .text-gray-500 {
+    color: black !important;
+  }
+
+  .text-blue-400, .text-red-400, .text-green-400, .text-yellow-400 {
     color: black !important;
   }
 
@@ -31,7 +35,7 @@
   }
 
   /* Show full-width content */
-  .max-w-7xl, main {
+  .max-w-7xl, main, .space-y-4 > * {
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -66,8 +70,11 @@
   /* Print header */
   @page {
     margin: 1cm;
-    size: A4 landscape;
+    size: A4 portrait;
   }
+
+  /* ReportDetail-specific: show all tabs content */
+  .tab-content { display: block !important; }
 
   /* Show URL after links */
   a[href]:after {
@@ -80,5 +87,18 @@
   header a[href]:after,
   nav a[href]:after {
     content: none;
+  }
+
+  /* Show stat pills as inline */
+  .grid.grid-cols-2, .grid.grid-cols-5 {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8pt !important;
+  }
+
+  .bg-gray-900.rounded-lg.p-3 {
+    background: #f3f4f6 !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4pt !important;
   }
 }
