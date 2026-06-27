@@ -1,7 +1,8 @@
 // Service to load REAL scanner data
 // Uses embedded data as primary source (always available in deployment)
 
-const WORKER_API_URL = import.meta.env.VITE_WORKER_API_URL || 'https://atheon-scanner-api.workers.dev';
+const WORKER_API_URL =
+  import.meta.env.VITE_WORKER_API_URL || 'https://atheon-scanner-api.workers.dev';
 const EMBEDDED_DATA_URL = import.meta.env.VITE_EMBEDDED_DATA_URL || '/embedded-data.json';
 
 // Polyfill for AbortSignal.any (not supported in Safari, older Edge)
@@ -10,34 +11,35 @@ function abortSignalAny(signals) {
   // Fallback: composite signal that aborts when ANY signal aborts
   const controller = new AbortController();
   signals.forEach((s) => {
-    if (s.aborted) { controller.abort(); return; }
+    if (s.aborted) {
+      controller.abort();
+      return;
+    }
     s.addEventListener('abort', () => controller.abort(), { once: true });
   });
   return controller.signal;
 }
 
-// Module-level cache with TTL
-let _cache = null;
-let _cacheTime = 0;
+// Module-level cache with TTL (per-URL to avoid cross-contamination)
+const _cache = new Map();
 const CACHE_TTL_MS = 60_000; // 60 seconds
 
 /** Load with in-module cache and 10s timeout; respects external abort signal */
 async function fetchWithCache(url, ttlMs, signal) {
   const now = Date.now();
-  if (_cache && (now - _cacheTime) < ttlMs) return _cache;
+  const cached = _cache.get(url);
+  if (cached && now - cached.time < ttlMs) return cached.data;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
   // Merge external signal so callers can cancel
-  const combinedSignal = signal
-    ? abortSignalAny([controller.signal, signal])
-    : controller.signal;
+  const combinedSignal = signal ? abortSignalAny([controller.signal, signal]) : controller.signal;
   try {
     const res = await fetch(url, { signal: combinedSignal });
     clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    _cache = await res.json();
-    _cacheTime = now;
-    return _cache;
+    const data = await res.json();
+    _cache.set(url, { data, time: now });
+    return data;
   } catch (e) {
     clearTimeout(timer);
     throw e;
@@ -63,30 +65,39 @@ export const loadRealScannerData = async (signal) => {
  * Get paginated list of repositories from embedded data
  * @param {AbortSignal} [signal] - optional abort signal
  */
-export const getAllRepositories = async (page = 1, limit = 50, language = null, tier = null, signal, search = '', minScore = '') => {
+export const getAllRepositories = async (
+  page = 1,
+  limit = 50,
+  language = null,
+  tier = null,
+  signal,
+  search = '',
+  minScore = ''
+) => {
   try {
     const data = await loadRealScannerData(signal); // uses cached fetch, respects signal
     let repos = data.recent_scans || [];
 
     if (language) {
-      repos = repos.filter(r => r.language === language);
+      repos = repos.filter((r) => r.language === language);
     }
     if (tier) {
-      repos = repos.filter(r => r.tier === tier);
+      repos = repos.filter((r) => r.tier === tier);
     }
     // Apply search + minScore server-side (before pagination) so all pages are searchable
     if (search) {
       const q = search.toLowerCase();
-      repos = repos.filter(r =>
-        (r.name || '').toLowerCase().includes(q) ||
-        (r.description || '').toLowerCase().includes(q) ||
-        (r.language || '').toLowerCase().includes(q) ||
-        ((r.topics || []).some((t) => t.toLowerCase().includes(q)))
+      repos = repos.filter(
+        (r) =>
+          (r.name || '').toLowerCase().includes(q) ||
+          (r.description || '').toLowerCase().includes(q) ||
+          (r.language || '').toLowerCase().includes(q) ||
+          (r.topics || []).some((t) => t.toLowerCase().includes(q))
       );
     }
     if (minScore) {
       const min = Number(minScore);
-      if (!Number.isNaN(min)) repos = repos.filter(r => (r.quality_score || 0) >= min);
+      if (!Number.isNaN(min)) repos = repos.filter((r) => (r.quality_score || 0) >= min);
     }
 
     const total = repos.length;
@@ -163,9 +174,7 @@ export const getPatternData = async () => {
 export const checkApiHealth = async (signal) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
-  const combinedSignal = signal
-    ? abortSignalAny([controller.signal, signal])
-    : controller.signal;
+  const combinedSignal = signal ? abortSignalAny([controller.signal, signal]) : controller.signal;
   try {
     const response = await fetch(EMBEDDED_DATA_URL, { signal: combinedSignal });
     clearTimeout(timer);

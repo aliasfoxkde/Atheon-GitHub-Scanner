@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect, useMemo } from 'react';
 
 const ThemeContext = createContext();
 
@@ -72,29 +72,28 @@ export const ThemeProvider = ({ children }) => {
     }
   }, [theme]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     const newTheme = theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark';
     setTheme(newTheme);
     localStorage.setItem('atheon-theme', newTheme);
-  };
+  }, [theme]);
 
-  const setThemeMode = (mode) => {
+  const setThemeMode = useCallback((mode) => {
     setTheme(mode);
     localStorage.setItem('atheon-theme', mode);
-  };
+  }, []);
 
-  const value = useMemo(() => ({
-    theme,
-    isDark,
-    toggleTheme,
-    setThemeMode,
-  }), [theme, isDark]);
-
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+  const value = useMemo(
+    () => ({
+      theme,
+      isDark,
+      toggleTheme,
+      setThemeMode,
+    }),
+    [theme, isDark]
   );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
 export default ThemeContext;

@@ -1,29 +1,50 @@
-import { useState } from 'react'
-import { getAllRepositories } from '../services/realScannerData'
+import { useState, useMemo } from 'react';
+import { getAllRepositories } from '../services/realScannerData';
 
 export default function ApiDocs() {
-  const [activeEndpoint, setActiveEndpoint] = useState(null)
-  const [requestBody, setRequestBody] = useState('')
-  const [response, setResponse] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [activeEndpoint, setActiveEndpoint] = useState(null);
+  const [requestBody, setRequestBody] = useState('');
+  const [response, setResponse] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const endpoints = [
-    {
-      id: 'scan',
-      method: 'POST',
-      path: '/api/scan',
-      description: 'Submit a repository for comprehensive security and quality analysis',
-      parameters: [
-        { name: 'type', type: 'string', required: true, description: 'Submission type (github, url, upload)' },
-        { name: 'repo', type: 'string', required: false, description: 'Repository identifier (owner/name) for github type' },
-        { name: 'url', type: 'string', required: false, description: 'Repository URL for url type' },
-        { name: 'files', type: 'file[]', required: false, description: 'Uploaded files for upload type' }
-      ],
-      requestBody: `{
+  const endpoints = useMemo(
+    () => [
+      {
+        id: 'scan',
+        method: 'POST',
+        path: '/api/scan',
+        description: 'Submit a repository for comprehensive security and quality analysis',
+        parameters: [
+          {
+            name: 'type',
+            type: 'string',
+            required: true,
+            description: 'Submission type (github, url, upload)',
+          },
+          {
+            name: 'repo',
+            type: 'string',
+            required: false,
+            description: 'Repository identifier (owner/name) for github type',
+          },
+          {
+            name: 'url',
+            type: 'string',
+            required: false,
+            description: 'Repository URL for url type',
+          },
+          {
+            name: 'files',
+            type: 'file[]',
+            required: false,
+            description: 'Uploaded files for upload type',
+          },
+        ],
+        requestBody: `{
   "type": "github",
   "repo": "facebook/react"
 }`,
-      response: `{
+        response: `{
   "success": true,
   "result": {
     "repository": {
@@ -44,23 +65,43 @@ export default function ApiDocs() {
   },
   "scanId": "scan_abc123"
 }`,
-      curl: `curl -X POST https://api.atheon-scanner.dev/api/scan \\
+        curl: `curl -X POST https://api.atheon-scanner.dev/api/scan \\
   -H "Content-Type: application/json" \\
-  -d '{"type":"github","repo":"facebook/react"}'`
-    },
-    {
-      id: 'reports',
-      method: 'GET',
-      path: '/api/reports',
-      description: 'Retrieve comprehensive scan reports with filtering capabilities',
-      parameters: [
-        { name: 'category', type: 'string', required: false, description: 'Filter by category (web-framework, cli-tool, ml-ai, etc.)' },
-        { name: 'tier', type: 'string', required: false, description: 'Filter by quality tier (A, B, C, D, F)' },
-        { name: 'language', type: 'string', required: false, description: 'Filter by programming language' },
-        { name: 'minScore', type: 'number', required: false, description: 'Minimum quality score (0-100)' }
-      ],
-      requestBody: null,
-      response: `{
+  -d '{"type":"github","repo":"facebook/react"}'`,
+      },
+      {
+        id: 'reports',
+        method: 'GET',
+        path: '/api/reports',
+        description: 'Retrieve comprehensive scan reports with filtering capabilities',
+        parameters: [
+          {
+            name: 'category',
+            type: 'string',
+            required: false,
+            description: 'Filter by category (web-framework, cli-tool, ml-ai, etc.)',
+          },
+          {
+            name: 'tier',
+            type: 'string',
+            required: false,
+            description: 'Filter by quality tier (A, B, C, D, F)',
+          },
+          {
+            name: 'language',
+            type: 'string',
+            required: false,
+            description: 'Filter by programming language',
+          },
+          {
+            name: 'minScore',
+            type: 'number',
+            required: false,
+            description: 'Minimum quality score (0-100)',
+          },
+        ],
+        requestBody: null,
+        response: `{
   "success": true,
   "reports": [
     {
@@ -79,18 +120,18 @@ export default function ApiDocs() {
   "page": 1,
   "perPage": 20
 }`,
-      curl: `curl https://api.atheon-scanner.dev/api/reports?language=JavaScript&tier=B&minScore=80`
-    },
-    {
-      id: 'report-detail',
-      method: 'GET',
-      path: '/api/reports/:id',
-      description: 'Retrieve detailed analysis report for a specific repository',
-      parameters: [
-        { name: 'id', type: 'string', required: true, description: 'Report identifier' }
-      ],
-      requestBody: null,
-      response: `{
+        curl: `curl https://api.atheon-scanner.dev/api/reports?language=JavaScript&tier=B&minScore=80`,
+      },
+      {
+        id: 'report-detail',
+        method: 'GET',
+        path: '/api/reports/:id',
+        description: 'Retrieve detailed analysis report for a specific repository',
+        parameters: [
+          { name: 'id', type: 'string', required: true, description: 'Report identifier' },
+        ],
+        requestBody: null,
+        response: `{
   "success": true,
   "report": {
     "id": "report_1",
@@ -126,20 +167,35 @@ export default function ApiDocs() {
     ]
   }
 }`,
-      curl: `curl https://api.atheon-scanner.dev/api/reports/report_1`
-    },
-    {
-      id: 'trending',
-      method: 'GET',
-      path: '/api/trending',
-      description: 'Fetch trending repositories by language and time period',
-      parameters: [
-        { name: 'language', type: 'string', required: false, description: 'Programming language filter' },
-        { name: 'since', type: 'string', required: false, description: 'Time period (daily, weekly, monthly)' },
-        { name: 'limit', type: 'number', required: false, description: 'Maximum results (default: 10)' }
-      ],
-      requestBody: null,
-      response: `{
+        curl: `curl https://api.atheon-scanner.dev/api/reports/report_1`,
+      },
+      {
+        id: 'trending',
+        method: 'GET',
+        path: '/api/trending',
+        description: 'Fetch trending repositories by language and time period',
+        parameters: [
+          {
+            name: 'language',
+            type: 'string',
+            required: false,
+            description: 'Programming language filter',
+          },
+          {
+            name: 'since',
+            type: 'string',
+            required: false,
+            description: 'Time period (daily, weekly, monthly)',
+          },
+          {
+            name: 'limit',
+            type: 'number',
+            required: false,
+            description: 'Maximum results (default: 10)',
+          },
+        ],
+        requestBody: null,
+        response: `{
   "success": true,
   "trending": [
     {
@@ -151,16 +207,16 @@ export default function ApiDocs() {
     }
   ]
 }`,
-      curl: `curl "https://api.atheon-scanner.dev/api/trending?language=TypeScript&since=weekly&limit=10"`
-    },
-    {
-      id: 'stats',
-      method: 'GET',
-      path: '/api/stats',
-      description: 'Get overall scanner statistics and metrics',
-      parameters: [],
-      requestBody: null,
-      response: `{
+        curl: `curl "https://api.atheon-scanner.dev/api/trending?language=TypeScript&since=weekly&limit=10"`,
+      },
+      {
+        id: 'stats',
+        method: 'GET',
+        path: '/api/stats',
+        description: 'Get overall scanner statistics and metrics',
+        parameters: [],
+        requestBody: null,
+        response: `{
   "success": true,
   "stats": {
     "total_repositories": 156,
@@ -180,20 +236,22 @@ export default function ApiDocs() {
     ]
   }
 }`,
-      curl: `curl https://api.atheon-scanner.dev/api/stats`
-    }
-  ]
+        curl: `curl https://api.atheon-scanner.dev/api/stats`,
+      },
+    ],
+    []
+  );
 
   const handleTestEndpoint = async (endpoint) => {
-    setLoading(true)
-    setResponse(null)
+    setLoading(true);
+    setResponse(null);
 
     try {
-      const start = Date.now()
-      let data = null
+      const start = Date.now();
+      let data = null;
 
       if (endpoint.method === 'GET' && endpoint.path === '/api/reports') {
-        const repos = await getAllRepositories()
+        const repos = await getAllRepositories();
         data = {
           success: true,
           reports: repos.slice(0, 20).map((r) => ({
@@ -210,16 +268,18 @@ export default function ApiDocs() {
           total: repos.length,
           page: 1,
           perPage: 20,
-        }
+        };
       } else if (endpoint.path === '/api/stats') {
-        const repos = await getAllRepositories()
-        const tiers = { A: 0, B: 0, C: 0, D: 0, F: 0 }
-        const langCounts = {}
+        const repos = await getAllRepositories();
+        const tiers = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+        const langCounts = {};
         repos.forEach((r) => {
-          tiers[r.tier] = (tiers[r.tier] || 0) + 1
-          langCounts[r.language] = (langCounts[r.language] || 0) + 1
-        })
-        const avgScore = repos.length ? repos.reduce((s, r) => s + (r.quality_score || 0), 0) / repos.length : 0
+          tiers[r.tier] = (tiers[r.tier] || 0) + 1;
+          langCounts[r.language] = (langCounts[r.language] || 0) + 1;
+        });
+        const avgScore = repos.length
+          ? repos.reduce((s, r) => s + (r.quality_score || 0), 0) / repos.length
+          : 0;
         data = {
           success: true,
           stats: {
@@ -227,12 +287,15 @@ export default function ApiDocs() {
             total_scans: repos.length,
             average_quality_score: Math.round(avgScore * 10) / 10,
             tier_distribution: tiers,
-            top_languages: Object.entries(langCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([language, count]) => ({ language, count })),
+            top_languages: Object.entries(langCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([language, count]) => ({ language, count })),
           },
-        }
+        };
       } else if (endpoint.path === '/api/trending') {
-        const repos = await getAllRepositories()
-        const trending = [...repos].sort((a, b) => (b.stars || 0) - (a.stars || 0)).slice(0, 10)
+        const repos = await getAllRepositories();
+        const trending = [...repos].sort((a, b) => (b.stars || 0) - (a.stars || 0)).slice(0, 10);
         data = {
           success: true,
           trending: trending.map((r) => ({
@@ -242,43 +305,60 @@ export default function ApiDocs() {
             description: r.description,
             today_stars: Math.floor((r.stars || 0) * 0.001),
           })),
-        }
+        };
       } else if (endpoint.path === '/api/scan') {
         // POST /api/scan — return a simulated queued response
         data = {
           success: true,
           result: {
-            repository: { name: 'facebook/react', owner: 'facebook', stars: 220000, language: 'JavaScript' },
+            repository: {
+              name: 'facebook/react',
+              owner: 'facebook',
+              stars: 220000,
+              language: 'JavaScript',
+            },
             qualityScore: 85,
             tier: 'B',
-            findings: [{ type: 'security', severity: 'high', description: 'Potential secret detected in configuration file' }],
+            findings: [
+              {
+                type: 'security',
+                severity: 'high',
+                description: 'Potential secret detected in configuration file',
+              },
+            ],
           },
           scanId: `scan_${Date.now().toString(36)}`,
-        }
+        };
       } else {
-        try { data = typeof endpoint.response === 'string' ? JSON.parse(endpoint.response) : endpoint.response }
-        catch { data = endpoint.response }
+        try {
+          data =
+            typeof endpoint.response === 'string'
+              ? JSON.parse(endpoint.response)
+              : endpoint.response;
+        } catch {
+          data = endpoint.response;
+        }
       }
 
-      const duration = Date.now() - start
+      const duration = Date.now() - start;
       setResponse({
         success: true,
         status: 200,
         data,
         timestamp: new Date().toISOString(),
         duration,
-      })
+      });
     } catch (error) {
       setResponse({
         success: false,
         error: 'Request failed',
         details: error.message,
         timestamp: new Date().toISOString(),
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-8">
@@ -292,29 +372,46 @@ export default function ApiDocs() {
       {/* Endpoints List */}
       <div className="space-y-4">
         {endpoints.map((endpoint) => (
-          <div key={endpoint.id} className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+          <div
+            key={endpoint.id}
+            className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"
+          >
             <button
               onClick={() => {
-                setActiveEndpoint(activeEndpoint === endpoint.id ? null : endpoint.id)
-                setRequestBody(endpoint.requestBody || '')
-                setResponse(null)
+                setActiveEndpoint(activeEndpoint === endpoint.id ? null : endpoint.id);
+                setRequestBody(endpoint.requestBody || '');
+                setResponse(null);
               }}
               className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-700 transition-colors"
             >
               <div className="flex items-center space-x-4">
-                <span className={`px-3 py-1 rounded text-xs font-bold ${
-                  endpoint.method === 'POST' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'
-                }`}>
+                <span
+                  className={`px-3 py-1 rounded text-xs font-bold ${
+                    endpoint.method === 'POST'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-blue-600 text-white'
+                  }`}
+                >
                   {endpoint.method}
                 </span>
                 <code className="text-gray-300 font-medium">{endpoint.path}</code>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-gray-400 text-sm">{endpoint.description}</span>
-                <svg className={`w-5 h-5 text-gray-400 transform transition-transform ${
-                  activeEndpoint === endpoint.id ? 'rotate-180' : ''
-                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className={`w-5 h-5 text-gray-400 transform transition-transform ${
+                    activeEndpoint === endpoint.id ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </button>
@@ -334,10 +431,18 @@ export default function ApiDocs() {
                     <table className="min-w-full divide-y divide-gray-700">
                       <thead className="bg-gray-800">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Name</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Type</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Required</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Description</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">
+                            Name
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">
+                            Type
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">
+                            Required
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">
+                            Description
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-700">
@@ -346,9 +451,13 @@ export default function ApiDocs() {
                             <td className="px-4 py-2 text-white font-medium">{param.name}</td>
                             <td className="px-4 py-2 text-gray-400">{param.type}</td>
                             <td className="px-4 py-2">
-                              <span className={`px-2 py-1 rounded text-xs ${
-                                param.required ? 'bg-red-600 text-white' : 'bg-gray-600 text-gray-300'
-                              }`}>
+                              <span
+                                className={`px-2 py-1 rounded text-xs ${
+                                  param.required
+                                    ? 'bg-red-600 text-white'
+                                    : 'bg-gray-600 text-gray-300'
+                                }`}
+                              >
                                 {param.required ? 'Yes' : 'No'}
                               </span>
                             </td>
@@ -367,8 +476,11 @@ export default function ApiDocs() {
                     <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
                       <pre className="text-sm text-gray-300 overflow-x-auto">
                         {(() => {
-                          try { return JSON.stringify(JSON.parse(endpoint.requestBody), null, 2) }
-                          catch { return endpoint.requestBody }
+                          try {
+                            return JSON.stringify(JSON.parse(endpoint.requestBody), null, 2);
+                          } catch {
+                            return endpoint.requestBody;
+                          }
                         })()}
                       </pre>
                     </div>
@@ -380,7 +492,9 @@ export default function ApiDocs() {
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-3">cURL Example</h3>
                     <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 flex items-start gap-3">
-                      <pre className="text-sm text-green-400 overflow-x-auto flex-1 font-mono">{endpoint.curl}</pre>
+                      <pre className="text-sm text-green-400 overflow-x-auto flex-1 font-mono">
+                        {endpoint.curl}
+                      </pre>
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(endpoint.curl).catch(() => {});
@@ -403,9 +517,7 @@ export default function ApiDocs() {
                   >
                     {loading ? 'Testing...' : 'Test Endpoint'}
                   </button>
-                  <span className="text-gray-400 text-sm">
-                    Live testing against embedded data
-                  </span>
+                  <span className="text-gray-400 text-sm">Live testing against embedded data</span>
                 </div>
 
                 {/* Response */}
@@ -414,9 +526,11 @@ export default function ApiDocs() {
                     <h3 className="text-lg font-semibold text-white mb-3">Response</h3>
                     <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
                       <div className="flex items-center justify-between mb-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          response.success ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            response.success ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                          }`}
+                        >
                           {response.status || 'Error'}
                         </span>
                         <span className="text-gray-500 text-xs">{response.timestamp}</span>
@@ -450,9 +564,7 @@ export default function ApiDocs() {
           Some endpoints may require authentication. Include your API token in the request header:
         </p>
         <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-          <pre className="text-sm text-gray-300">
-Authorization: Bearer YOUR_API_TOKEN
-          </pre>
+          <pre className="text-sm text-gray-300">Authorization: Bearer YOUR_API_TOKEN</pre>
         </div>
       </div>
 
@@ -461,20 +573,54 @@ Authorization: Bearer YOUR_API_TOKEN
         <h2 className="text-xl font-semibold text-white mb-4">Rate Limits</h2>
         <ul className="space-y-2 text-gray-400">
           <li className="flex items-center">
-            <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-5 h-5 text-green-500 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
-            <span><strong className="text-white">Unauthenticated:</strong> 60 requests/hour</span>
+            <span>
+              <strong className="text-white">Unauthenticated:</strong> 60 requests/hour
+            </span>
           </li>
           <li className="flex items-center">
-            <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-5 h-5 text-green-500 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
-            <span><strong className="text-white">Authenticated:</strong> 5,000 requests/hour</span>
+            <span>
+              <strong className="text-white">Authenticated:</strong> 5,000 requests/hour
+            </span>
           </li>
           <li className="flex items-center">
-            <svg className="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <svg
+              className="w-5 h-5 text-yellow-500 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
             </svg>
             <span>Rate limit headers included in all responses</span>
           </li>
@@ -490,12 +636,14 @@ Authorization: Bearer YOUR_API_TOKEN
             { code: '401', message: 'Unauthorized - Missing or invalid authentication' },
             { code: '404', message: 'Not Found - Resource does not exist' },
             { code: '429', message: 'Too Many Requests - Rate limit exceeded' },
-            { code: '500', message: 'Internal Server Error - Server-side error occurred' }
+            { code: '500', message: 'Internal Server Error - Server-side error occurred' },
           ].map((error, idx) => (
             <div key={idx} className="flex items-center space-x-4">
-              <span className={`px-3 py-1 rounded text-xs font-bold ${
-                error.code.startsWith('4') ? 'bg-orange-600 text-white' : 'bg-red-600 text-white'
-              }`}>
+              <span
+                className={`px-3 py-1 rounded text-xs font-bold ${
+                  error.code.startsWith('4') ? 'bg-orange-600 text-white' : 'bg-red-600 text-white'
+                }`}
+              >
                 {error.code}
               </span>
               <span className="text-gray-400">{error.message}</span>
@@ -504,5 +652,5 @@ Authorization: Bearer YOUR_API_TOKEN
         </div>
       </div>
     </div>
-  )
+  );
 }

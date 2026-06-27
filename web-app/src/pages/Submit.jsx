@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { useToast } from '../contexts/ToastContext'
-import { Skeleton, SkeletonStat } from '../components/Skeleton'
-import { loadRealScannerData } from '../services/realScannerData'
+import { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { useToast } from '../contexts/ToastContext';
+import { Skeleton, SkeletonStat } from '../components/Skeleton';
+import { loadRealScannerData } from '../services/realScannerData';
 
 const RECENT_KEY = 'atheon_recent_submissions';
 
@@ -19,7 +19,10 @@ export default function Submit() {
   const toast = useToast();
 
   useEffect(() => {
-    return () => { mountedRef.current = false; if (scanTimerRef.current) clearTimeout(scanTimerRef.current) };
+    return () => {
+      mountedRef.current = false;
+      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -32,9 +35,13 @@ export default function Submit() {
   }, []);
 
   const persistRecent = (entry) => {
-    const next = [entry, ...recent.filter((r) => r.target !== entry.target)].slice(0, 5);
-    setRecent(next);
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch {}
+    setRecent((prev) => {
+      const next = [entry, ...prev.filter((r) => r.target !== entry.target)].slice(0, 5);
+      try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   };
 
   const computeScanEstimate = async (repoInput) => {
@@ -61,11 +68,14 @@ export default function Submit() {
         const isKnownOrg = org.length > 3 && org.length < 30;
         const isShortName = name.length <= 5;
         if (isShortName) {
-          deps = 20; files = 100;
+          deps = 20;
+          files = 100;
         } else if (isKnownOrg) {
-          deps = 100; files = 500;
+          deps = 100;
+          files = 500;
         } else {
-          deps = 50; files = 200;
+          deps = 50;
+          files = 200;
         }
       }
       let time;
@@ -84,15 +94,19 @@ export default function Submit() {
   const getFieldError = (field) => {
     if (field === 'repo') {
       if (!formData.repo) return 'Repository is required';
-      if (!formData.repo.includes('/')) return 'Must be in the form owner/name (e.g. facebook/react)';
+      if (!formData.repo.includes('/'))
+        return 'Must be in the form owner/name (e.g. facebook/react)';
     }
     if (field === 'url') {
       if (!formData.url) return 'URL is required';
       try {
         const u = new URL(formData.url);
-        if (!['http:', 'https:'].includes(u.protocol)) return 'Only http:// and https:// URLs are allowed';
+        if (!['http:', 'https:'].includes(u.protocol))
+          return 'Only http:// and https:// URLs are allowed';
         return null;
-      } catch { return 'Please enter a valid URL'; }
+      } catch {
+        return 'Please enter a valid URL';
+      }
     }
     return null;
   };
@@ -112,7 +126,9 @@ export default function Submit() {
         return false;
       }
     } else if (formData.type === 'url') {
-      try { new URL(formData.url); } catch {
+      try {
+        new URL(formData.url);
+      } catch {
         toast.error('Please enter a valid URL');
         return false;
       }
@@ -138,7 +154,8 @@ export default function Submit() {
         type: formData.type,
         estimatedTime: '2-5 minutes',
         submittedAt: new Date().toISOString(),
-        message: 'Scan queued. Since this is a read-only deployment, full scan execution is not available. Browse existing reports below.',
+        message:
+          'Scan queued. Since this is a read-only deployment, full scan execution is not available. Browse existing reports below.',
       };
       setResult(mockResult);
       setScanning(false);
@@ -148,7 +165,12 @@ export default function Submit() {
   };
 
   const fillRecent = (r) => {
-    setFormData({ ...formData, type: r.type, repo: r.type === 'github' ? r.target : '', url: r.type === 'url' ? r.target : '' });
+    setFormData({
+      ...formData,
+      type: r.type,
+      repo: r.type === 'github' ? r.target : '',
+      url: r.type === 'url' ? r.target : '',
+    });
     toast.info(`Loaded ${r.target}`);
   };
 
@@ -157,7 +179,8 @@ export default function Submit() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Submit Code for Analysis</h1>
         <p className="text-gray-400 text-sm sm:text-base">
-          Submit a GitHub repository or public URL. The scanner will analyze dependencies, quality, and security.
+          Submit a GitHub repository or public URL. The scanner will analyze dependencies, quality,
+          and security.
         </p>
       </div>
 
@@ -165,7 +188,9 @@ export default function Submit() {
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <form onSubmit={handleSubmit} className="space-y-4">
             <fieldset>
-              <legend className="block text-sm font-medium text-gray-300 mb-2">Submission type</legend>
+              <legend className="block text-sm font-medium text-gray-300 mb-2">
+                Submission type
+              </legend>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { v: 'github', l: 'GitHub repo' },
@@ -191,7 +216,12 @@ export default function Submit() {
 
             {formData.type === 'github' ? (
               <div>
-                <label htmlFor="submit-repo" className="block text-sm font-medium text-gray-300 mb-2">Repository (owner/name)</label>
+                <label
+                  htmlFor="submit-repo"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
+                  Repository (owner/name)
+                </label>
                 <input
                   id="submit-repo"
                   type="text"
@@ -204,12 +234,19 @@ export default function Submit() {
                   className={`w-full bg-gray-900 border rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isFieldInvalid('repo') ? 'border-red-500' : 'border-gray-700'}`}
                 />
                 {isFieldInvalid('repo') && (
-                  <p id="repo-error" className="mt-1 text-xs text-red-400" role="alert">{getFieldError('repo')}</p>
+                  <p id="repo-error" className="mt-1 text-xs text-red-400" role="alert">
+                    {getFieldError('repo')}
+                  </p>
                 )}
               </div>
             ) : (
               <div>
-                <label htmlFor="submit-url" className="block text-sm font-medium text-gray-300 mb-2">Repository URL</label>
+                <label
+                  htmlFor="submit-url"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
+                  Repository URL
+                </label>
                 <input
                   id="submit-url"
                   type="url"
@@ -222,7 +259,9 @@ export default function Submit() {
                   className={`w-full bg-gray-900 border rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isFieldInvalid('url') ? 'border-red-500' : 'border-gray-700'}`}
                 />
                 {isFieldInvalid('url') && (
-                  <p id="url-error" className="mt-1 text-xs text-red-400" role="alert">{getFieldError('url')}</p>
+                  <p id="url-error" className="mt-1 text-xs text-red-400" role="alert">
+                    {getFieldError('url')}
+                  </p>
                 )}
               </div>
             )}
@@ -235,8 +274,19 @@ export default function Submit() {
               {scanning ? (
                 <>
                   <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
                   </svg>
                   <span>Submitting…</span>
                 </>
@@ -271,11 +321,14 @@ export default function Submit() {
           <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 animate-pulse">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-gray-400 text-sm">Estimated scan time</span>
-              <span className="bg-blue-900 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-700">info</span>
+              <span className="bg-blue-900 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-700">
+                info
+              </span>
             </div>
             <p className="text-white font-semibold text-lg">{scanEstimate.time}</p>
             <p className="text-gray-400 text-xs mt-1">
-              Based on ~{scanEstimate.deps} dependencies · ~{scanEstimate.files.toLocaleString()} files
+              Based on ~{scanEstimate.deps} dependencies · ~{scanEstimate.files.toLocaleString()}{' '}
+              files
             </p>
           </div>
         )}
@@ -291,7 +344,9 @@ export default function Submit() {
                 'Drill into any report to see file-level findings',
               ].map((step, i) => (
                 <li key={i} className="flex items-start">
-                  <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 text-xs">{i + 1}</span>
+                  <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 text-xs">
+                    {i + 1}
+                  </span>
                   {step}
                 </li>
               ))}
@@ -309,7 +364,11 @@ export default function Submit() {
                 { tier: 'F', label: '0–39', cls: 'bg-red-500' },
               ].map((t) => (
                 <div key={t.tier} className="flex items-center gap-3 text-sm">
-                  <span className={`w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold ${t.cls}`}>{t.tier}</span>
+                  <span
+                    className={`w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold ${t.cls}`}
+                  >
+                    {t.tier}
+                  </span>
                   <span className="text-gray-400">{t.label}</span>
                 </div>
               ))}
@@ -361,5 +420,5 @@ export default function Submit() {
         </div>
       )}
     </div>
-  )
+  );
 }

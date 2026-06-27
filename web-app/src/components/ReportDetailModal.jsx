@@ -1,5 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
 import { useToast } from '../contexts/ToastContext';
 import { getScoreColor, getTierColor } from '../utils/colors';
 import { formatDate } from '../utils/date';
@@ -7,16 +16,16 @@ import { loadRealScannerData } from '../services/realScannerData';
 
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-/* eslint-disable react-hooks/rules-of-hooks -- report guard before hooks is intentional */
 export default function ReportDetailModal({ report, onClose, onCompare }) {
-  if (!report) return null;
-
   const [activeTab, setActiveTab] = useState('overview');
   const [copying, setCopying] = useState(false);
   const [trendData, setTrendData] = useState(null);
   const [langAvg, setLangAvg] = useState(null);
   const panelRef = useRef(null);
   const toast = useToast();
+
+  /* eslint-disable react-hooks/rules-of-hooks -- guard before hooks is intentional */
+  if (!report) return null;
 
   useEffect(() => {
     const prev = document.activeElement;
@@ -27,12 +36,26 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
     document.body.style.overflow = 'hidden';
 
     const trap = (e) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
       if (e.key !== 'Tab') return;
-      const els = [...panel.querySelectorAll(FOCUSABLE)].filter(el => !el.disabled && el.offsetParent != null);
+      const els = [...panel.querySelectorAll(FOCUSABLE)].filter(
+        (el) => !el.disabled && el.offsetParent != null
+      );
       if (!els.length) return;
-      if (e.shiftKey) { if (document.activeElement === els[0]) { e.preventDefault(); els[els.length - 1].focus() } }
-      else { if (document.activeElement === els[els.length - 1]) { e.preventDefault(); els[0].focus() } }
+      if (e.shiftKey) {
+        if (document.activeElement === els[0]) {
+          e.preventDefault();
+          els[els.length - 1].focus();
+        }
+      } else {
+        if (document.activeElement === els[els.length - 1]) {
+          e.preventDefault();
+          els[0].focus();
+        }
+      }
     };
     panel.addEventListener('keydown', trap);
 
@@ -66,8 +89,10 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
     medium: report.medium_findings || 0,
     low: report.low_findings || 0,
   };
-  const totalFindings = report.total_findings || report.findings_count
-    || (securityCounts.critical + securityCounts.high + securityCounts.medium + securityCounts.low);
+  const totalFindings =
+    report.total_findings ||
+    report.findings_count ||
+    securityCounts.critical + securityCounts.high + securityCounts.medium + securityCounts.low;
 
   // Open-on-GitHub link if name is in owner/repo form
   const looksLikeRepo = typeof name === 'string' && /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(name);
@@ -125,7 +150,11 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
         const langEntry = (data.top_languages || []).find(
           (l) => l.language?.toLowerCase() === language?.toLowerCase()
         );
-        const avg = langEntry?.avgScore ?? langEntry?.average_quality_score ?? data.quality_stats?.average ?? 0;
+        const avg =
+          langEntry?.avgScore ??
+          langEntry?.average_quality_score ??
+          data.quality_stats?.average ??
+          0;
         setLangAvg(avg);
 
         // Build 14-day synthetic trend anchored at the scan_date
@@ -135,7 +164,9 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
         const trend = Array.from({ length: 14 }, (_, i) => {
           const dayTs = scanTs - (13 - i) * 86_400_000;
           const t = i / 13; // 0→1
-          const noise = Math.sin(t * Math.PI * 2) * (score * 0.04) + (Math.cos(t * Math.PI) * (avg - score) * 0.15);
+          const noise =
+            Math.sin(t * Math.PI * 2) * (score * 0.04) +
+            Math.cos(t * Math.PI) * (avg - score) * 0.15;
           return {
             day: new Date(dayTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             score: Math.min(100, Math.max(0, Math.round(score + noise))),
@@ -143,7 +174,9 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
         });
         setTrendData(trend);
       })
-      .catch(() => { /* ignore — chart just won't show */ });
+      .catch(() => {
+        /* ignore — chart just won't show */
+      });
     return () => controller.abort();
   }, [language, qualityScore, scanDate]);
 
@@ -170,7 +203,8 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                 </span>
               </div>
               <p className="text-sm text-gray-400 mt-1 break-words">
-                {description || `${language} package · scanned ${formatDate(scanDate)} via ${scanMethod}`}
+                {description ||
+                  `${language} package · scanned ${formatDate(scanDate)} via ${scanMethod}`}
               </p>
               {githubUrl && (
                 <a
@@ -179,14 +213,25 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 mt-2 text-sm text-blue-400 hover:text-blue-300"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0a12 12 0 00-3.79 23.4c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.21.09 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 016 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0012 0z" /></svg>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0a12 12 0 00-3.79 23.4c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.21.09 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 016 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0012 0z" />
+                  </svg>
                   Open on GitHub
                 </a>
               )}
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-white p-2 flex-shrink-0" aria-label="Close">
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white p-2 flex-shrink-0"
+              aria-label="Close"
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -194,12 +239,15 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
             <div className="text-center">
               <div className={`text-2xl font-bold ${getScoreColor(qualityScore)}`}>
-                {qualityScore}<span className="text-sm text-gray-500">/100</span>
+                {qualityScore}
+                <span className="text-sm text-gray-500">/100</span>
               </div>
               <div className="text-xs text-gray-400">Quality Score</div>
             </div>
             <div className="text-center">
-              <div className={`inline-block px-3 py-1 rounded-full text-lg font-bold ${getTierColor(tier)}`}>
+              <div
+                className={`inline-block px-3 py-1 rounded-full text-lg font-bold ${getTierColor(tier)}`}
+              >
                 {tier}
               </div>
               <div className="text-xs text-gray-400 mt-1">Quality Tier</div>
@@ -251,8 +299,14 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                   <dl className="space-y-2 text-sm">
                     <Row label="Language" value={language} />
                     <Row label="Stars" value={stars > 0 ? stars.toLocaleString() : '—'} />
-                    <Row label="Dependencies" value={totalDeps > 0 ? totalDeps.toLocaleString() : '—'} />
-                    <Row label="Files analyzed" value={totalFiles > 0 ? totalFiles.toLocaleString() : '—'} />
+                    <Row
+                      label="Dependencies"
+                      value={totalDeps > 0 ? totalDeps.toLocaleString() : '—'}
+                    />
+                    <Row
+                      label="Files analyzed"
+                      value={totalFiles > 0 ? totalFiles.toLocaleString() : '—'}
+                    />
                     <Row label="Scan method" value={scanMethod} />
                   </dl>
                 </div>
@@ -261,13 +315,32 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                   <h3 className="text-lg font-semibold text-white mb-3">Security Analysis</h3>
                   {totalFindings > 0 ? (
                     <dl className="space-y-2 text-sm">
-                      <Row label="Critical" value={securityCounts.critical} accent="text-red-500 font-semibold" />
-                      <Row label="High" value={securityCounts.high} accent="text-orange-500 font-semibold" />
-                      <Row label="Medium" value={securityCounts.medium} accent="text-yellow-500 font-semibold" />
-                      <Row label="Low" value={securityCounts.low} accent="text-blue-500 font-semibold" />
+                      <Row
+                        label="Critical"
+                        value={securityCounts.critical}
+                        accent="text-red-500 font-semibold"
+                      />
+                      <Row
+                        label="High"
+                        value={securityCounts.high}
+                        accent="text-orange-500 font-semibold"
+                      />
+                      <Row
+                        label="Medium"
+                        value={securityCounts.medium}
+                        accent="text-yellow-500 font-semibold"
+                      />
+                      <Row
+                        label="Low"
+                        value={securityCounts.low}
+                        accent="text-blue-500 font-semibold"
+                      />
                     </dl>
                   ) : (
-                    <p className="text-sm text-gray-400">No security findings were reported for this scan. The corpus has not yet collected per-package findings — only top-level tier and quality score.</p>
+                    <p className="text-sm text-gray-400">
+                      No security findings were reported for this scan. The corpus has not yet
+                      collected per-package findings — only top-level tier and quality score.
+                    </p>
                   )}
                 </div>
               </div>
@@ -278,8 +351,13 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {Object.entries(metrics).map(([key, value]) => (
                       <div key={key} className="text-center">
-                        <div className="text-2xl font-bold text-blue-400">{value}<span className="text-sm text-gray-500">/100</span></div>
-                        <div className="text-xs text-gray-400 capitalize">{key.replace(/_/g, ' ')}</div>
+                        <div className="text-2xl font-bold text-blue-400">
+                          {value}
+                          <span className="text-sm text-gray-500">/100</span>
+                        </div>
+                        <div className="text-xs text-gray-400 capitalize">
+                          {key.replace(/_/g, ' ')}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -290,23 +368,66 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                 <div className="bg-gray-900 rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-white mb-1">Score Context</h3>
                   <p className="text-xs text-gray-400 mb-4">
-                    Synthetic 14-day quality score trend for this package vs. the {language} ecosystem average ({Math.round(langAvg ?? 0)}).
+                    Synthetic 14-day quality score trend for this package vs. the {language}{' '}
+                    ecosystem average ({Math.round(langAvg ?? 0)}).
                   </p>
                   <ResponsiveContainer width="100%" height={120}>
                     <LineChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} interval={3} />
-                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
+                      <XAxis
+                        dataKey="day"
+                        tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                        tickLine={false}
+                        interval={3}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
+                        contentStyle={{
+                          backgroundColor: '#1F2937',
+                          border: '1px solid #374151',
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
                         labelStyle={{ color: '#D1D5DB' }}
                         itemStyle={{ color: '#60A5FA' }}
                       />
                       {langAvg > 0 && (
-                        <ReferenceLine y={langAvg} stroke="#9CA3AF" strokeDasharray="4 4" label={{ value: `avg ${Math.round(langAvg)}`, position: 'insideTopRight', fontSize: 10, fill: '#9CA3AF' }} />
+                        <ReferenceLine
+                          y={langAvg}
+                          stroke="#9CA3AF"
+                          strokeDasharray="4 4"
+                          label={{
+                            value: `avg ${Math.round(langAvg)}`,
+                            position: 'insideTopRight',
+                            fontSize: 10,
+                            fill: '#9CA3AF',
+                          }}
+                        />
                       )}
-                      <ReferenceLine y={qualityScore} stroke="#60A5FA" strokeDasharray="2 2" label={{ value: `this ${qualityScore}`, position: 'insideTopLeft', fontSize: 10, fill: '#60A5FA' }} />
-                      <Line type="monotone" dataKey="score" stroke="#60A5FA" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#60A5FA' }} />
+                      <ReferenceLine
+                        y={qualityScore}
+                        stroke="#60A5FA"
+                        strokeDasharray="2 2"
+                        label={{
+                          value: `this ${qualityScore}`,
+                          position: 'insideTopLeft',
+                          fontSize: 10,
+                          fill: '#60A5FA',
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="#60A5FA"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4, fill: '#60A5FA' }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -318,17 +439,20 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
             <div className="space-y-4">
               {findings.length > 0 ? (
                 findings.map((finding, idx) => {
-                  const sev = (finding.severity || 'info').toLowerCase()
-                  const label = finding.pattern || finding.description || finding.message || 'Unknown finding'
+                  const sev = (finding.severity || 'info').toLowerCase();
+                  const label =
+                    finding.pattern || finding.description || finding.message || 'Unknown finding';
                   return (
                     <div key={idx} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${getSeverityColor(sev)}`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-bold uppercase ${getSeverityColor(sev)}`}
+                        >
                           {sev}
                         </span>
                         {finding.confidence != null && (
                           <span className="text-xs text-gray-500">
-                            conf {Math.round((finding.confidence) * 100)}%
+                            conf {Math.round(finding.confidence * 100)}%
                           </span>
                         )}
                         {finding.type && (
@@ -339,20 +463,39 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                       <div className="text-sm text-gray-400 mt-2 space-y-1">
                         {finding.file && (
                           <div className="flex items-center gap-1">
-                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <svg
+                              className="w-3 h-3 flex-shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
                             <span className="font-mono text-xs">{finding.file}</span>
-                            {finding.line && <span className="text-gray-500 text-xs">:{finding.line}</span>}
+                            {finding.line && (
+                              <span className="text-gray-500 text-xs">:{finding.line}</span>
+                            )}
                           </div>
                         )}
                         {finding.category && <div>Category: {finding.category}</div>}
-                        {finding.rule && <div className="font-mono text-xs text-gray-500">Rule: {finding.rule}</div>}
+                        {finding.rule && (
+                          <div className="font-mono text-xs text-gray-500">
+                            Rule: {finding.rule}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )
+                  );
                 })
               ) : (
                 <div className="bg-gray-900 rounded-lg p-6 text-center text-gray-400">
-                  No security findings were recorded for this scan. The tier and quality score summarize the overall analysis.
+                  No security findings were recorded for this scan. The tier and quality score
+                  summarize the overall analysis.
                 </div>
               )}
             </div>
@@ -367,11 +510,16 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                     {Object.entries(metrics).map(([key, value]) => (
                       <div key={key}>
                         <div className="flex justify-between mb-1">
-                          <span className="text-sm text-gray-400 capitalize">{key.replace(/_/g, ' ')}</span>
+                          <span className="text-sm text-gray-400 capitalize">
+                            {key.replace(/_/g, ' ')}
+                          </span>
                           <span className="text-sm font-medium text-white">{value}/100</span>
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-2">
-                          <div className="bg-blue-500 h-2 rounded-full transition-all duration-300" style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }} />
+                          <div
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
+                          />
                         </div>
                       </div>
                     ))}
@@ -379,7 +527,8 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                 </div>
               ) : (
                 <div className="bg-gray-900 rounded-lg p-6 text-center text-gray-400">
-                  Sub-metric breakdown is not available for this scan. Only the overall quality score is recorded.
+                  Sub-metric breakdown is not available for this scan. Only the overall quality
+                  score is recorded.
                 </div>
               )}
 
@@ -388,9 +537,17 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                   <h3 className="text-lg font-semibold text-white mb-4">Severity Distribution</h3>
                   <div className="space-y-4">
                     {[
-                      { label: 'Critical', count: securityCounts.critical, colorClass: 'bg-red-500' },
+                      {
+                        label: 'Critical',
+                        count: securityCounts.critical,
+                        colorClass: 'bg-red-500',
+                      },
                       { label: 'High', count: securityCounts.high, colorClass: 'bg-orange-500' },
-                      { label: 'Medium', count: securityCounts.medium, colorClass: 'bg-yellow-500' },
+                      {
+                        label: 'Medium',
+                        count: securityCounts.medium,
+                        colorClass: 'bg-yellow-500',
+                      },
                       { label: 'Low', count: securityCounts.low, colorClass: 'bg-blue-500' },
                     ].map((item) => (
                       <div key={item.label}>
@@ -401,7 +558,9 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                         <div className="w-full bg-gray-700 rounded-full h-2">
                           <div
                             className={`${item.colorClass} h-2 rounded-full transition-all duration-300`}
-                            style={{ width: `${totalFindings ? Math.min((item.count / totalFindings) * 100, 100) : 0}%` }}
+                            style={{
+                              width: `${totalFindings ? Math.min((item.count / totalFindings) * 100, 100) : 0}%`,
+                            }}
                           />
                         </div>
                       </div>
@@ -489,7 +648,9 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
                   <h3 className="text-lg font-semibold text-white mb-3">Topics</h3>
                   <div className="flex flex-wrap gap-2">
                     {report.topics.map((topic, i) => (
-                      <span key={i} className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">{topic}</span>
+                      <span key={i} className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">
+                        {topic}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -513,13 +674,14 @@ export default function ReportDetailModal({ report, onClose, onCompare }) {
         </div>
 
         <div className="p-4 sm:p-6 border-t border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <div className="text-sm text-gray-400">
-            Scanned on {formatDate(scanDate)}
-          </div>
+          <div className="text-sm text-gray-400">Scanned on {formatDate(scanDate)}</div>
           <div className="flex flex-wrap gap-2 justify-end">
             {onCompare && (
               <button
-                onClick={() => { onCompare(report); toast.info(`Added ${name} to compare`); }}
+                onClick={() => {
+                  onCompare(report);
+                  toast.info(`Added ${name} to compare`);
+                }}
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 + Add to compare
@@ -555,10 +717,15 @@ function Row({ label, value, accent }) {
 
 function getSeverityColor(severity) {
   switch (String(severity).toLowerCase()) {
-    case 'critical': return 'text-red-500 bg-red-500/10';
-    case 'high': return 'text-orange-500 bg-orange-500/10';
-    case 'medium': return 'text-yellow-500 bg-yellow-500/10';
-    case 'low': return 'text-blue-500 bg-blue-500/10';
-    default: return 'text-gray-500 bg-gray-500/10';
+    case 'critical':
+      return 'text-red-500 bg-red-500/10';
+    case 'high':
+      return 'text-orange-500 bg-orange-500/10';
+    case 'medium':
+      return 'text-yellow-500 bg-yellow-500/10';
+    case 'low':
+      return 'text-blue-500 bg-blue-500/10';
+    default:
+      return 'text-gray-500 bg-gray-500/10';
   }
 }

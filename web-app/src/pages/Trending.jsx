@@ -33,23 +33,27 @@ export default function Trending() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ language: '', since: 'all', limit: 20 });
   const [watchlist, setWatchlist] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(WATCHLIST_KEY) || '[]'); } catch { return []; }
+    try {
+      return JSON.parse(localStorage.getItem(WATCHLIST_KEY) || '[]');
+    } catch {
+      return [];
+    }
   });
   const [watchlistExpanded, setWatchlistExpanded] = useState(true);
   const toast = useToast();
   const hasActiveFilters = filters.language !== '' || filters.since !== 'all';
 
   useEffect(() => {
-    const controller = new AbortController();
     let mounted = true;
     (async () => {
       try {
-        const data = await loadRealScannerData(controller.signal);
+        const data = await loadRealScannerData();
         if (!mounted) return;
         // Use the pre-built trending array if available, else derive from recent_scans
-        const trending = data.trending && data.trending.length > 0
-          ? data.trending
-          : (data.recent_scans || []).map((s) => ({ ...s, id: s.id || s.name }));
+        const trending =
+          data.trending && data.trending.length > 0
+            ? data.trending
+            : (data.recent_scans || []).map((s) => ({ ...s, id: s.id || s.name }));
         setAllRepos(data.recent_scans || []);
         setTrendingData(trending);
       } catch (err) {
@@ -59,7 +63,9 @@ export default function Trending() {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { controller.abort(); mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -96,12 +102,15 @@ export default function Trending() {
   }, [allRepos]);
 
   const toggleWatchlist = (name) => {
-    const next = watchlist.includes(name)
+    const isCurrentlyInWatchlist = watchlist.includes(name);
+    const next = isCurrentlyInWatchlist
       ? watchlist.filter((n) => n !== name)
       : [...watchlist, name];
     setWatchlist(next);
-    try { localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next)); } catch {}
-    if (watchlist.includes(name)) {
+    try {
+      localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
+    } catch {}
+    if (isCurrentlyInWatchlist) {
       toast.info(`Removed ${name} from watchlist`);
     } else {
       toast.success(`Added ${name} to watchlist`);
@@ -110,36 +119,45 @@ export default function Trending() {
 
   // Import watchlist from JSON file
   const handleImportWatchlist = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const text = ev.target.result
-        let ids = []
-        try { ids = JSON.parse(text) } catch {
-          const lines = text.trim().split('\n')
-          ids = lines.map((l) => l.split(',')[0].trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+        const text = ev.target.result;
+        let ids = [];
+        try {
+          ids = JSON.parse(text);
+        } catch {
+          const lines = text.trim().split('\n');
+          ids = lines
+            .map((l) =>
+              l
+                .split(',')[0]
+                .trim()
+                .replace(/^["']|["']$/g, '')
+            )
+            .filter(Boolean);
         }
-        if (!Array.isArray(ids)) throw new Error('Not an array')
-        const next = [...new Set([...watchlist, ...ids])]
-        setWatchlist(next)
-        try { localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next)) } catch {}
-        toast.success(`Imported ${ids.length} watchlist item(s)`)
+        if (!Array.isArray(ids)) throw new Error('Not an array');
+        const next = [...new Set([...watchlist, ...ids])];
+        setWatchlist(next);
+        try {
+          localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
+        } catch {}
+        toast.success(`Imported ${ids.length} watchlist item(s)`);
       } catch {
-        toast.error('Failed to import watchlist — invalid format')
+        toast.error('Failed to import watchlist — invalid format');
       }
-      e.target.value = ''
-    }
-    reader.readAsText(file)
+      e.target.value = '';
+    };
+    reader.readAsText(file);
   };
 
   // Top watched repos: matched from allRepos against watchlist IDs
   const watchedRepos = useMemo(() => {
     if (watchlist.length === 0) return [];
-    return allRepos
-      .filter((r) => watchlist.includes(r.name))
-      .slice(0, 5);
+    return allRepos.filter((r) => watchlist.includes(r.name)).slice(0, 5);
   }, [allRepos, watchlist]);
 
   const watchlistOverflow = watchlist.length > 5 ? watchlist.length - 5 : 0;
@@ -149,9 +167,13 @@ export default function Trending() {
       <div className="space-y-4">
         <Skeleton className="h-10 w-64" />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-12" />
+          ))}
         </div>
-        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
       </div>
     );
   }
@@ -195,18 +217,30 @@ export default function Trending() {
           {watchlistExpanded && (
             <div className="mt-3 space-y-2">
               {watchedRepos.map((repo) => (
-                <div key={repo.name} className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2">
+                <div
+                  key={repo.name}
+                  className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2"
+                >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${LANG_BADGE[repo.language] || 'bg-gray-600 text-white'}`}>
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${LANG_BADGE[repo.language] || 'bg-gray-600 text-white'}`}
+                    >
                       {repo.language}
                     </span>
                     <span className="text-sm text-white font-medium truncate">{repo.name}</span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      repo.tier === 'A' ? 'bg-green-700 text-white' :
-                      repo.tier === 'B' ? 'bg-blue-700 text-white' :
-                      repo.tier === 'C' ? 'bg-yellow-700 text-white' :
-                      repo.tier === 'D' ? 'bg-orange-700 text-white' : 'bg-red-700 text-white'
-                    }`}>
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        repo.tier === 'A'
+                          ? 'bg-green-700 text-white'
+                          : repo.tier === 'B'
+                            ? 'bg-blue-700 text-white'
+                            : repo.tier === 'C'
+                              ? 'bg-yellow-700 text-white'
+                              : repo.tier === 'D'
+                                ? 'bg-orange-700 text-white'
+                                : 'bg-red-700 text-white'
+                      }`}
+                    >
                       Tier {repo.tier}
                     </span>
                   </div>
@@ -227,7 +261,12 @@ export default function Trending() {
       <div className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="trending-language" className="block text-sm font-medium text-gray-300 mb-2">Language</label>
+            <label
+              htmlFor="trending-language"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
+              Language
+            </label>
             <select
               id="trending-language"
               value={filters.language}
@@ -235,11 +274,20 @@ export default function Trending() {
               className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
             >
               <option value="">All languages</option>
-              {languages.map((l) => <option key={l} value={l}>{l}</option>)}
+              {languages.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label htmlFor="trending-since" className="block text-sm font-medium text-gray-300 mb-2">Time period</label>
+            <label
+              htmlFor="trending-since"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
+              Time period
+            </label>
             <select
               id="trending-since"
               value={filters.since}
@@ -253,7 +301,12 @@ export default function Trending() {
             </select>
           </div>
           <div>
-            <label htmlFor="trending-limit" className="block text-sm font-medium text-gray-300 mb-2">Limit</label>
+            <label
+              htmlFor="trending-limit"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
+              Limit
+            </label>
             <select
               id="trending-limit"
               value={filters.limit}
@@ -278,7 +331,11 @@ export default function Trending() {
 
       {filtered.length === 0 ? (
         <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400 border border-gray-700">
-          <p className="mb-2">{allRepos.length === 0 ? 'No trending data available yet.' : 'No repositories match the selected filters.'}</p>
+          <p className="mb-2">
+            {allRepos.length === 0
+              ? 'No trending data available yet.'
+              : 'No repositories match the selected filters.'}
+          </p>
           {hasActiveFilters && (
             <button
               onClick={() => setFilters({ language: '', since: 'all', limit: 20 })}
@@ -294,14 +351,18 @@ export default function Trending() {
             <thead>
               <tr className="bg-gray-800 border-b border-gray-700">
                 <th className="px-3 py-2 text-left text-gray-400 font-medium text-xs w-8">#</th>
-                <th className="px-3 py-2 text-left text-gray-400 font-medium text-xs">Repository</th>
+                <th className="px-3 py-2 text-left text-gray-400 font-medium text-xs">
+                  Repository
+                </th>
                 <th className="px-3 py-2 text-left text-gray-400 font-medium text-xs">Lang</th>
                 <th className="px-3 py-2 text-left text-gray-400 font-medium text-xs">Tier</th>
                 <th className="px-3 py-2 text-right text-gray-400 font-medium text-xs">⭐ Stars</th>
                 <th className="px-3 py-2 text-right text-gray-400 font-medium text-xs">Deps</th>
                 <th className="px-3 py-2 text-right text-gray-400 font-medium text-xs">Score</th>
                 <th className="px-3 py-2 text-right text-gray-400 font-medium text-xs">Trend</th>
-                <th className="px-3 py-2 text-center text-gray-400 font-medium text-xs w-16">Watch</th>
+                <th className="px-3 py-2 text-center text-gray-400 font-medium text-xs w-16">
+                  Watch
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -320,22 +381,35 @@ export default function Trending() {
                     </Link>
                   </td>
                   <td className="px-3 py-2">
-                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${LANG_BADGE[repo.language] || 'bg-gray-600 text-white'}`}>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-xs font-medium ${LANG_BADGE[repo.language] || 'bg-gray-600 text-white'}`}
+                    >
                       {repo.language}
                     </span>
                   </td>
                   <td className="px-3 py-2">
-                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                      repo.tier === 'A' ? 'bg-green-700 text-white' :
-                      repo.tier === 'B' ? 'bg-blue-700 text-white' :
-                      repo.tier === 'C' ? 'bg-yellow-700 text-white' :
-                      repo.tier === 'D' ? 'bg-orange-700 text-white' : 'bg-red-700 text-white'
-                    }`}>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                        repo.tier === 'A'
+                          ? 'bg-green-700 text-white'
+                          : repo.tier === 'B'
+                            ? 'bg-blue-700 text-white'
+                            : repo.tier === 'C'
+                              ? 'bg-yellow-700 text-white'
+                              : repo.tier === 'D'
+                                ? 'bg-orange-700 text-white'
+                                : 'bg-red-700 text-white'
+                      }`}
+                    >
                       {repo.tier}
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right text-gray-300">
-                    {repo.stars > 0 ? (repo.stars >= 1000 ? `${(repo.stars / 1000).toFixed(1)}k` : repo.stars) : '—'}
+                    {repo.stars > 0
+                      ? repo.stars >= 1000
+                        ? `${(repo.stars / 1000).toFixed(1)}k`
+                        : repo.stars
+                      : '—'}
                   </td>
                   <td className="px-3 py-2 text-right text-gray-300">
                     {repo.total_dependencies > 0 ? repo.total_dependencies : '—'}
@@ -344,14 +418,18 @@ export default function Trending() {
                     {repo.quality_score}
                   </td>
                   <td className="px-3 py-2 text-right text-gray-400 text-xs">
-                    {(trendingScore(repo)).toFixed(0)}
+                    {trendingScore(repo).toFixed(0)}
                   </td>
                   <td className="px-3 py-2 text-center">
                     <button
                       onClick={() => toggleWatchlist(repo.name)}
-                      title={watchlist.includes(repo.name) ? 'Remove from watchlist' : 'Add to watchlist'}
+                      title={
+                        watchlist.includes(repo.name) ? 'Remove from watchlist' : 'Add to watchlist'
+                      }
                       className={`text-lg transition-colors ${
-                        watchlist.includes(repo.name) ? 'text-yellow-400 hover:text-yellow-300' : 'text-gray-600 hover:text-yellow-400'
+                        watchlist.includes(repo.name)
+                          ? 'text-yellow-400 hover:text-yellow-300'
+                          : 'text-gray-600 hover:text-yellow-400'
                       }`}
                     >
                       {watchlist.includes(repo.name) ? '★' : '☆'}

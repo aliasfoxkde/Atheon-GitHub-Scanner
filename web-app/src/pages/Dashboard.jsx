@@ -37,7 +37,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [countdown, setCountdown] = useState(0);
 
   // Global search
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,20 +79,21 @@ const Dashboard = () => {
       const response = await loadRealScannerData(signal);
       if (!response) throw new Error('No data received from scanner');
 
-      const data = (response.data || response);
+      const data = response.data || response;
       if (!data) throw new Error('No data available');
 
       // Compute quality score distribution buckets (0-10, 10-20, ..., 90-100)
       const allScores = (data.recent_scans || []).map((s) => s.quality_score || 0);
       const qualityBuckets = Array.from({ length: 10 }, (_, i) => ({
         range: i === 9 ? '90-100' : `${i * 10}-${i * 10 + 10}`,
-        count: allScores.filter((s) => i === 9 ? s >= 90 : (s >= i * 10 && s < i * 10 + 10)).length,
+        count: allScores.filter((s) => (i === 9 ? s >= 90 : s >= i * 10 && s < i * 10 + 10)).length,
       }));
 
       // Compute real quality stats from raw scores
       const sortedScores = [...allScores].sort((a, b) => a - b);
       const mean = allScores.reduce((a, b) => a + b, 0) / (allScores.length || 1);
-      const variance = allScores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / (allScores.length || 1);
+      const variance =
+        allScores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / (allScores.length || 1);
       const stdDev = Math.sqrt(variance);
       const qualityStats = {
         average: mean,
@@ -135,10 +135,21 @@ const Dashboard = () => {
           dependencyVulns: data.security_pattern_distribution?.['Dependency vulnerabilities'] || 0,
           sqlInjection: data.security_pattern_distribution?.['SQL injection'] || 0,
           codeInjection: data.security_pattern_distribution?.['Code injection'] || 0,
-          xss: (data.security_pattern_distribution?.['XSS'] || 0) + (data.security_pattern_distribution?.['XSS vulnerability'] || 0),
-          crypto: data.security_pattern_distribution?.['Crypto'] || data.security_pattern_distribution?.['Cryptography'] || 0,
-          secrets: data.security_pattern_distribution?.['Secrets'] || data.security_pattern_distribution?.['Secret exposure'] || 0,
-          config: data.security_pattern_distribution?.['Config'] || data.security_pattern_distribution?.['Configuration'] || 0,
+          xss:
+            (data.security_pattern_distribution?.['XSS'] || 0) +
+            (data.security_pattern_distribution?.['XSS vulnerability'] || 0),
+          crypto:
+            data.security_pattern_distribution?.['Crypto'] ||
+            data.security_pattern_distribution?.['Cryptography'] ||
+            0,
+          secrets:
+            data.security_pattern_distribution?.['Secrets'] ||
+            data.security_pattern_distribution?.['Secret exposure'] ||
+            0,
+          config:
+            data.security_pattern_distribution?.['Config'] ||
+            data.security_pattern_distribution?.['Configuration'] ||
+            0,
         },
         qualityStats,
         qualityBuckets,
@@ -180,19 +191,16 @@ const Dashboard = () => {
     fetchStats(controller.signal);
     checkHealth(controller.signal);
     const seconds = Number(settings.autoRefreshInterval) || 0;
-    setCountdown(seconds);
 
     if (seconds > 0) {
+      const startTime = Date.now();
       const tick = setInterval(() => {
-        setCountdown((c) => {
-          if (c <= 1) {
-            const ctrl = new AbortController();
-            fetchStats(ctrl.signal);
-            checkHealth(ctrl.signal);
-            return seconds;
-          }
-          return c - 1;
-        });
+        const elapsed = (Date.now() - startTime) / 1000;
+        if (elapsed >= seconds) {
+          const ctrl = new AbortController();
+          fetchStats(ctrl.signal);
+          checkHealth(ctrl.signal);
+        }
       }, 1000);
       return () => {
         controller.abort();
@@ -220,7 +228,6 @@ const Dashboard = () => {
     const agoInterval = setInterval(updateTimeAgo, 60000);
     return () => clearInterval(agoInterval);
     // Only depends on stats.lastUpdated for initial value; interval self-corrects via closure
-     
   }, [stats.lastUpdated]);
 
   // Global search (debounced)
@@ -250,19 +257,24 @@ const Dashboard = () => {
         if (!cancelled) setSearchLoading(false);
       }
     }, 200);
-    return () => { cancelled = true; clearTimeout(t); };
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [searchQuery]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    const controller = new AbortController();
     try {
       // Re-fetch local embedded data — no external API needed
-      await fetchStats();
+      await fetchStats(controller.signal);
       toast.success('Dashboard refreshed');
     } catch (err) {
-      toast.error('Refresh failed');
+      if (err.name !== 'AbortError') toast.error('Refresh failed');
     } finally {
       setRefreshing(false);
+      controller.abort();
     }
   };
 
@@ -347,19 +359,27 @@ const Dashboard = () => {
 
   const getApiStatusColor = () => {
     switch (stats.apiStatus) {
-      case 'healthy': return 'text-green-500';
-      case 'error': return 'text-red-500';
-      case 'unavailable': return 'text-yellow-500';
-      default: return 'text-gray-500';
+      case 'healthy':
+        return 'text-green-500';
+      case 'error':
+        return 'text-red-500';
+      case 'unavailable':
+        return 'text-yellow-500';
+      default:
+        return 'text-gray-500';
     }
   };
 
   const getApiStatusText = () => {
     switch (stats.apiStatus) {
-      case 'healthy': return 'API Connected';
-      case 'error': return 'API Error';
-      case 'unavailable': return 'API Unavailable';
-      default: return 'Checking...';
+      case 'healthy':
+        return 'API Connected';
+      case 'error':
+        return 'API Error';
+      case 'unavailable':
+        return 'API Unavailable';
+      default:
+        return 'Checking...';
     }
   };
 
@@ -383,7 +403,10 @@ const Dashboard = () => {
               ref={searchRef}
               type="search"
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSearchOpen(true);
+              }}
               onFocus={() => searchQuery && setSearchOpen(true)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && searchQuery.trim()) {
@@ -396,8 +419,18 @@ const Dashboard = () => {
               className="w-48 sm:w-64 bg-gray-700 text-white rounded-lg pl-9 pr-3 py-2 text-sm border border-gray-600 focus:border-blue-500 focus:outline-none placeholder-gray-400"
               aria-label="Global package search"
             />
-            <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             {searchOpen && (searchLoading || searchResults.length > 0) && (
               <div className="absolute z-30 left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-80 overflow-y-auto">
@@ -416,7 +449,11 @@ const Dashboard = () => {
                         >
                           <span className="text-white truncate flex-1">{r.name}</span>
                           <span className="text-gray-400 text-xs">{r.language}</span>
-                          <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${getTierColor(r.tier)}`}>{r.tier}</span>
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-xs font-bold ${getTierColor(r.tier)}`}
+                          >
+                            {r.tier}
+                          </span>
                         </button>
                       </li>
                     ))}
@@ -439,8 +476,18 @@ const Dashboard = () => {
             className={`bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-2 ${refreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
             aria-label="Refresh data"
           >
-            <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              className={`w-4 h-4 sm:w-5 sm:h-5 ${refreshing ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
             <span className="hidden sm:inline">{refreshing ? 'Refreshing…' : 'Refresh'}</span>
           </button>
@@ -451,8 +498,18 @@ const Dashboard = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-2"
             aria-label="Download report"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            <svg
+              className="w-4 h-4 sm:w-5 sm:h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
             </svg>
             <span className="hidden sm:inline">Download</span>
           </button>
@@ -463,8 +520,18 @@ const Dashboard = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-2"
             aria-label="Share dashboard"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            <svg
+              className="w-4 h-4 sm:w-5 sm:h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+              />
             </svg>
             <span className="hidden sm:inline">Share</span>
           </button>
@@ -475,8 +542,18 @@ const Dashboard = () => {
             className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-2"
             aria-label="Compare reports"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <svg
+              className="w-4 h-4 sm:w-5 sm:h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
             </svg>
             <span className="hidden sm:inline">Compare</span>
           </button>
@@ -487,7 +564,9 @@ const Dashboard = () => {
       {loading && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[1, 2, 3, 4].map((i) => <SkeletonStat key={i} />)}
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonStat key={i} />
+            ))}
           </div>
           <Skeleton className="h-64" />
         </div>
@@ -497,8 +576,18 @@ const Dashboard = () => {
       {error && !loading && (
         <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
           <div className="flex items-center space-x-3">
-            <svg className="w-6 h-6 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-6 h-6 text-red-500 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div>
               <h3 className="text-white font-semibold">Error Loading Data</h3>
@@ -518,24 +607,35 @@ const Dashboard = () => {
                 <h2 className="text-lg font-semibold text-white mb-1">Atheon Scanner</h2>
                 <p className="text-gray-300 text-sm leading-relaxed">
                   Automated GitHub repository analysis powered by{' '}
-                  <span className="text-indigo-400 font-medium">Atheon Patterns</span> — a curated rule
-                  engine for security vulnerability detection, code quality assessment, and open-source
-                  health scoring. Analyzes dependency health, secrets exposure, injection risks, crypto
-                  implementations, and configuration issues across{' '}
-                  <span className="text-white font-medium">{stats.totalRepos.toLocaleString()}+ packages</span>.
+                  <span className="text-indigo-400 font-medium">Atheon Patterns</span> — a curated
+                  rule engine for security vulnerability detection, code quality assessment, and
+                  open-source health scoring. Analyzes dependency health, secrets exposure,
+                  injection risks, crypto implementations, and configuration issues across{' '}
+                  <span className="text-white font-medium">
+                    {stats.totalRepos.toLocaleString()}+ packages
+                  </span>
+                  .
                 </p>
               </div>
               <div className="flex flex-wrap gap-3 sm:flex-col sm:items-end sm:justify-start">
                 <div className="flex gap-2">
-                  <Link to="/submit" className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors">
+                  <Link
+                    to="/submit"
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors"
+                  >
                     Submit Repo
                   </Link>
-                  <Link to="/reports" className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-colors">
+                  <Link
+                    to="/reports"
+                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-colors"
+                  >
                     Browse All
                   </Link>
                 </div>
                 <div className="flex gap-2 text-xs text-gray-300">
-                  <span className="px-2 py-0.5 bg-gray-700 rounded">{stats.totalRepos.toLocaleString()} packages</span>
+                  <span className="px-2 py-0.5 bg-gray-700 rounded">
+                    {stats.totalRepos.toLocaleString()} packages
+                  </span>
                   <span className="px-2 py-0.5 bg-gray-700 rounded">v1.0.0</span>
                 </div>
               </div>
@@ -552,37 +652,98 @@ const Dashboard = () => {
                 Files: <span className="text-white font-medium">{stats.dataFilesCount}</span>
               </span>
               <span className="text-gray-400 text-sm">
-                Updated: <span className="text-white font-medium">{timeAgo || formatDate(stats.lastUpdated)}</span>
-              </span>
-              <span className="text-gray-400 text-xs ml-auto hidden sm:inline">
-                Auto-refresh: {Number(settings.autoRefreshInterval) > 0
-                  ? countdown > 0 ? `${countdown}s` : 'refreshing…'
-                  : 'off'}
+                Updated:{' '}
+                <span className="text-white font-medium">
+                  {timeAgo || formatDate(stats.lastUpdated)}
+                </span>
               </span>
             </div>
           )}
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <StatCard label="Packages Analyzed" value={stats.totalRepos.toLocaleString()} color="blue"
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />} />
-            <StatCard label="Avg Score" value={stats.avgQualityScore ? stats.avgQualityScore.toFixed(1) : '0.0'} color="green"
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />} />
-            <StatCard label="Total Scans" value={stats.totalScans.toLocaleString()} color="purple"
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />} />
-            <StatCard label="Security Findings" value={stats.criticalIssues.toLocaleString()} color="red"
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />} />
+            <StatCard
+              label="Packages Analyzed"
+              value={stats.totalRepos.toLocaleString()}
+              color="blue"
+              icon={
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
+              }
+            />
+            <StatCard
+              label="Avg Score"
+              value={stats.avgQualityScore ? stats.avgQualityScore.toFixed(1) : '0.0'}
+              color="green"
+              icon={
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              }
+            />
+            <StatCard
+              label="Total Scans"
+              value={stats.totalScans.toLocaleString()}
+              color="purple"
+              icon={
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              }
+            />
+            <StatCard
+              label="Security Findings"
+              value={stats.criticalIssues.toLocaleString()}
+              color="red"
+              icon={
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              }
+            />
           </div>
 
           {/* Quality score supplemental stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Median Score', value: stats.qualityStats.median.toFixed(1), color: 'text-blue-400' },
-              { label: 'Std Dev', value: `±${stats.qualityStats.std_dev.toFixed(1)}`, color: 'text-gray-400' },
-              { label: 'Min Score', value: stats.qualityStats.min.toFixed(0), color: 'text-red-400' },
-              { label: 'Max Score', value: stats.qualityStats.max.toFixed(0), color: 'text-green-400' },
+              {
+                label: 'Median Score',
+                value: stats.qualityStats.median.toFixed(1),
+                color: 'text-blue-400',
+              },
+              {
+                label: 'Std Dev',
+                value: `±${stats.qualityStats.std_dev.toFixed(1)}`,
+                color: 'text-gray-400',
+              },
+              {
+                label: 'Min Score',
+                value: stats.qualityStats.min.toFixed(0),
+                color: 'text-red-400',
+              },
+              {
+                label: 'Max Score',
+                value: stats.qualityStats.max.toFixed(0),
+                color: 'text-green-400',
+              },
             ].map((s) => (
-              <div key={s.label} className="bg-gray-800 rounded-lg p-3 border border-gray-700 flex items-center justify-between">
+              <div
+                key={s.label}
+                className="bg-gray-800 rounded-lg p-3 border border-gray-700 flex items-center justify-between"
+              >
                 <span className="text-xs text-gray-400">{s.label}</span>
                 <span className={`text-lg font-bold ${s.color}`}>{s.value}</span>
               </div>
@@ -594,7 +755,9 @@ const Dashboard = () => {
             <div className="bg-gray-800 rounded-lg border border-gray-700">
               <div className="p-4 sm:p-6 border-b border-gray-700 flex items-center justify-between">
                 <h2 className="text-lg sm:text-xl font-semibold text-white">Recent Activity</h2>
-                <Link to="/reports" className="text-sm text-blue-400 hover:text-blue-300">View All</Link>
+                <Link to="/reports" className="text-sm text-blue-400 hover:text-blue-300">
+                  View All
+                </Link>
               </div>
               <div className="p-4 sm:p-6">
                 {stats.recentScans.length === 0 ? (
@@ -610,11 +773,21 @@ const Dashboard = () => {
                           to={`/reports?q=${encodeURIComponent(scan.repoName)}`}
                           className="flex items-center gap-3 flex-1 min-w-0"
                         >
-                          <span className="text-white font-medium text-sm truncate hover:text-blue-300">{scan.repoName}</span>
-                          <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded flex-shrink-0">{scan.language}</span>
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ${getTierColor(scan.tier)}`}>{scan.tier}</span>
+                          <span className="text-white font-medium text-sm truncate hover:text-blue-300">
+                            {scan.repoName}
+                          </span>
+                          <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded flex-shrink-0">
+                            {scan.language}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ${getTierColor(scan.tier)}`}
+                          >
+                            {scan.tier}
+                          </span>
                         </Link>
-                        <span className="text-gray-400 text-xs ml-2 flex-shrink-0">{formatDate(scan.scanDate)}</span>
+                        <span className="text-gray-400 text-xs ml-2 flex-shrink-0">
+                          {formatDate(scan.scanDate)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -629,7 +802,9 @@ const Dashboard = () => {
             <div className="bg-gray-800 rounded-lg border border-gray-700">
               <div className="p-4 sm:p-6 border-b border-gray-700 flex items-center justify-between">
                 <h2 className="text-lg sm:text-xl font-semibold text-white">Recent Scans</h2>
-                <Link to="/reports" className="text-sm text-blue-400 hover:text-blue-300">View All</Link>
+                <Link to="/reports" className="text-sm text-blue-400 hover:text-blue-300">
+                  View All
+                </Link>
               </div>
               <div className="p-4 sm:p-6">
                 {stats.recentScans.length === 0 ? (
@@ -645,12 +820,18 @@ const Dashboard = () => {
                           to={`/reports?q=${encodeURIComponent(scan.repoName)}`}
                           className="flex-1 min-w-0"
                         >
-                          <h3 className="text-white font-medium text-sm sm:text-base truncate hover:text-blue-300">{scan.repoName}</h3>
+                          <h3 className="text-white font-medium text-sm sm:text-base truncate hover:text-blue-300">
+                            {scan.repoName}
+                          </h3>
                           <div className="flex items-center flex-wrap gap-x-2 mt-1">
-                            <span className="text-xs sm:text-sm text-gray-400">{scan.language}</span>
+                            <span className="text-xs sm:text-sm text-gray-400">
+                              {scan.language}
+                            </span>
                             {scan.stars > 0 && (
                               <span className="text-xs text-gray-400">
-                                {scan.stars >= 1000 ? `${(scan.stars / 1000).toFixed(1)}k stars` : `${scan.stars} stars`}
+                                {scan.stars >= 1000
+                                  ? `${(scan.stars / 1000).toFixed(1)}k stars`
+                                  : `${scan.stars} stars`}
                               </span>
                             )}
                             {scan.totalDependencies > 0 && (
@@ -668,11 +849,15 @@ const Dashboard = () => {
                         <div className="flex items-center space-x-2 sm:space-x-4 ml-2">
                           <div className="text-right">
                             <p className="text-xs text-gray-400 hidden sm:block">Score</p>
-                            <p className={`text-base sm:text-lg font-bold ${getScoreColor(scan.qualityScore)}`}>
+                            <p
+                              className={`text-base sm:text-lg font-bold ${getScoreColor(scan.qualityScore)}`}
+                            >
                               {scan.qualityScore}
                             </p>
                           </div>
-                          <div className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${getTierColor(scan.tier)}`}>
+                          <div
+                            className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${getTierColor(scan.tier)}`}
+                          >
                             {scan.tier}
                           </div>
                         </div>
@@ -704,15 +889,27 @@ const Dashboard = () => {
                       size={180}
                     />
                     <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-                      {Object.entries(stats.securityStats).filter(([,v]) => v > 0).map(([sev, count]) => (
-                        <div key={sev} className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            sev === 'critical' ? 'bg-red-500' : sev === 'high' ? 'bg-orange-500' : sev === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
-                          }`} />
-                          <span className="text-gray-300 capitalize">{sev}</span>
-                          <span className="text-white font-medium ml-auto">{count.toLocaleString()}</span>
-                        </div>
-                      ))}
+                      {Object.entries(stats.securityStats)
+                        .filter(([, v]) => v > 0)
+                        .map(([sev, count]) => (
+                          <div key={sev} className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                sev === 'critical'
+                                  ? 'bg-red-500'
+                                  : sev === 'high'
+                                    ? 'bg-orange-500'
+                                    : sev === 'medium'
+                                      ? 'bg-yellow-500'
+                                      : 'bg-blue-500'
+                              }`}
+                            />
+                            <span className="text-gray-300 capitalize">{sev}</span>
+                            <span className="text-white font-medium ml-auto">
+                              {count.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
                     </div>
                   </div>
                 </div>
@@ -724,11 +921,15 @@ const Dashboard = () => {
           {stats.qualityBuckets.length > 0 && (
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 hover:border-blue-500/30 transition-all">
               <div className="p-4 sm:p-6 border-b border-gray-700 flex items-center justify-between">
-                <h2 className="text-lg sm:text-xl font-semibold text-white">Quality Score Distribution</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-white">
+                  Quality Score Distribution
+                </h2>
                 <div className="flex gap-4 text-xs text-gray-400">
                   <span>σ {stats.qualityStats.std_dev.toFixed(1)}</span>
                   <span>Median {stats.qualityStats.median.toFixed(1)}</span>
-                  <span>Range {stats.qualityStats.min.toFixed(0)}–{stats.qualityStats.max.toFixed(0)}</span>
+                  <span>
+                    Range {stats.qualityStats.min.toFixed(0)}–{stats.qualityStats.max.toFixed(0)}
+                  </span>
                 </div>
               </div>
               <div className="p-4 sm:p-6">
@@ -741,10 +942,13 @@ const Dashboard = () => {
                         <div className="w-full flex flex-col items-center justify-end h-24">
                           <div
                             className={`w-full rounded-t transition-all duration-300 hover:opacity-80 ${
-                              i >= 9 ? 'bg-green-500/70' :
-                              i >= 7 ? 'bg-blue-500/70' :
-                              i >= 5 ? 'bg-yellow-500/70' :
-                              'bg-red-500/70'
+                              i >= 9
+                                ? 'bg-green-500/70'
+                                : i >= 7
+                                  ? 'bg-blue-500/70'
+                                  : i >= 5
+                                    ? 'bg-yellow-500/70'
+                                    : 'bg-red-500/70'
                             }`}
                             style={{ height: `${Math.max(pct, 2)}%` }}
                             title={`${bucket.range}: ${bucket.count} packages`}
@@ -757,10 +961,18 @@ const Dashboard = () => {
                   })}
                 </div>
                 <div className="flex justify-center gap-6 mt-3 text-xs">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-red-500/70" /> &lt;50</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-yellow-500/70" /> 50–70</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-blue-500/70" /> 70–90</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-green-500/70" /> 90–100</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded bg-red-500/70" /> &lt;50
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded bg-yellow-500/70" /> 50–70
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded bg-blue-500/70" /> 70–90
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded bg-green-500/70" /> 90–100
+                  </span>
                 </div>
               </div>
             </div>
@@ -769,7 +981,9 @@ const Dashboard = () => {
           {/* Tier Distribution */}
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 hover:border-purple-500/30 transition-all">
             <div className="p-4 sm:p-6 border-b border-gray-700">
-              <h2 className="text-lg sm:text-xl font-semibold text-white">Quality Tier Distribution</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-white">
+                Quality Tier Distribution
+              </h2>
             </div>
             <div className="p-4 sm:p-6">
               <BarChart data={stats.tierDistribution} title="Packages by Quality Tier" />
@@ -779,7 +993,9 @@ const Dashboard = () => {
           {/* Top Languages */}
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 hover:border-yellow-500/30 transition-all">
             <div className="p-4 sm:p-6 border-b border-gray-700">
-              <h2 className="text-lg sm:text-xl font-semibold text-white">Top Programming Languages</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-white">
+                Top Programming Languages
+              </h2>
             </div>
             <div className="p-4 sm:p-6">
               <div className="space-y-3">
@@ -787,17 +1003,25 @@ const Dashboard = () => {
                   <div key={lang.language} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 min-w-0">
                       <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
-                      <span className="text-sm sm:text-base text-white font-medium truncate">{lang.language}</span>
-                      <span className="text-xs sm:text-sm text-gray-400">{lang.count.toLocaleString()} pkgs</span>
+                      <span className="text-sm sm:text-base text-white font-medium truncate">
+                        {lang.language}
+                      </span>
+                      <span className="text-xs sm:text-sm text-gray-400">
+                        {lang.count.toLocaleString()} pkgs
+                      </span>
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
                       <div className="w-24 sm:w-32 bg-gray-700 rounded-full h-2">
                         <div
                           className="bg-blue-500 h-2 rounded-full"
-                          style={{ width: `${(lang.count / Math.max(stats.topLanguages[0]?.count || 1, 1)) * 100}%` }}
+                          style={{
+                            width: `${(lang.count / Math.max(stats.topLanguages[0]?.count || 1, 1)) * 100}%`,
+                          }}
                         />
                       </div>
-                      <span className="text-xs sm:text-sm text-gray-400 w-16 text-right">Avg: {lang.avgScore}</span>
+                      <span className="text-xs sm:text-sm text-gray-400 w-16 text-right">
+                        Avg: {lang.avgScore}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -806,36 +1030,63 @@ const Dashboard = () => {
           </div>
 
           {/* Repository Health Radar — show for highest-scoring recent scan */}
-          {stats.recentScans.length > 0 && (() => {
-            const topRepo = [...stats.recentScans].sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0))[0];
-            return (
-              <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 hover:border-indigo-500/30 transition-all">
-                <div className="p-4 sm:p-6 border-b border-gray-700 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-semibold text-white">Repository Health Radar</h2>
-                    <p className="text-xs text-gray-400 mt-1">{topRepo.repoName} — top-scoring in recent scans</p>
+          {stats.recentScans.length > 0 &&
+            (() => {
+              const topRepo = [...stats.recentScans].sort(
+                (a, b) => (b.qualityScore || 0) - (a.qualityScore || 0)
+              )[0];
+              return (
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 hover:border-indigo-500/30 transition-all">
+                  <div className="p-4 sm:p-6 border-b border-gray-700 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-semibold text-white">
+                        Repository Health Radar
+                      </h2>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {topRepo.repoName} — top-scoring in recent scans
+                      </p>
+                    </div>
+                    <Link
+                      to={`/reports?q=${encodeURIComponent(topRepo.repoName)}`}
+                      className="text-sm text-indigo-400 hover:text-indigo-300"
+                    >
+                      View Report →
+                    </Link>
                   </div>
-                  <Link to={`/reports?q=${encodeURIComponent(topRepo.repoName)}`}
-                    className="text-sm text-indigo-400 hover:text-indigo-300">View Report →</Link>
+                  <div className="p-4 sm:p-6 flex justify-center">
+                    <RepositoryRadarChart report={topRepo} size={300} />
+                  </div>
                 </div>
-                <div className="p-4 sm:p-6 flex justify-center">
-                  <RepositoryRadarChart report={topRepo} size={300} />
-                </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Link to="/submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2">
+            <Link
+              to="/submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               <span>Submit New Analysis</span>
             </Link>
-            <Link to="/reports" className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2">
+            <Link
+              to="/reports"
+              className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               <span>Browse Reports</span>
             </Link>
@@ -863,8 +1114,15 @@ function StatCard({ label, value, color, icon }) {
           <p className="text-xs sm:text-sm text-gray-400">{label}</p>
           <p className="text-2xl sm:text-3xl font-bold text-white mt-1 truncate">{value}</p>
         </div>
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
-          <svg className={`w-5 h-5 sm:w-6 sm:h-6 ${text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div
+          className={`w-10 h-10 sm:w-12 sm:h-12 ${bg} rounded-lg flex items-center justify-center flex-shrink-0`}
+        >
+          <svg
+            className={`w-5 h-5 sm:w-6 sm:h-6 ${text}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             {icon}
           </svg>
         </div>

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useReducer, useRef } from 'react';
+import { createContext, useCallback, useContext, useMemo, useReducer, useRef } from 'react';
 
 const ToastContext = createContext(null);
 
@@ -45,20 +45,25 @@ export function ToastProvider({ children }) {
     [dismiss]
   );
 
-  const value = {
-    toasts,
-    show,
-    success: (msg, opts) => show(msg, { ...opts, type: 'success' }),
-    error: (msg, opts) => show(msg, { ...opts, type: 'error' }),
-    info: (msg, opts) => show(msg, { ...opts, type: 'info' }),
-    warning: (msg, opts) => show(msg, { ...opts, type: 'warning' }),
-    dismiss,
-    clear: () => {
-      timers.current.forEach(clearTimeout);
-      timers.current.clear();
-      dispatch({ type: 'CLEAR' });
-    },
-  };
+  const clear = useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current.clear();
+    dispatch({ type: 'CLEAR' });
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      toasts,
+      show,
+      success: (msg, opts) => show(msg, { ...opts, type: 'success' }),
+      error: (msg, opts) => show(msg, { ...opts, type: 'error' }),
+      info: (msg, opts) => show(msg, { ...opts, type: 'info' }),
+      warning: (msg, opts) => show(msg, { ...opts, type: 'warning' }),
+      dismiss,
+      clear,
+    }),
+    [toasts, show, dismiss, clear]
+  );
 
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
 }
