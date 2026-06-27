@@ -33,6 +33,7 @@ const Dashboard = () => {
     apiStatus: 'unknown',
     dataSource: 'unknown',
   });
+  const [timeAgo, setTimeAgo] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -181,6 +182,18 @@ const Dashboard = () => {
     const seconds = Number(settings.autoRefreshInterval) || 0;
     setCountdown(seconds);
 
+    // Update "time ago" every minute
+    const updateTimeAgo = () => {
+      if (!stats.lastUpdated) return;
+      const diff = Math.floor((Date.now() - new Date(stats.lastUpdated).getTime()) / 1000);
+      if (diff < 60) setTimeAgo('just now');
+      else if (diff < 3600) setTimeAgo(`${Math.floor(diff / 60)}m ago`);
+      else if (diff < 86400) setTimeAgo(`${Math.floor(diff / 3600)}h ago`);
+      else setTimeAgo(`${Math.floor(diff / 86400)}d ago`);
+    };
+    updateTimeAgo();
+    const agoInterval = setInterval(updateTimeAgo, 60000);
+
     if (seconds > 0) {
       const tick = setInterval(() => {
         setCountdown((c) => {
@@ -196,14 +209,16 @@ const Dashboard = () => {
       return () => {
         controller.abort();
         clearInterval(tick);
+        clearInterval(agoInterval);
       };
     }
     // When autoRefresh is off (seconds === 0), still abort on unmount
     return () => {
       controller.abort();
+      clearInterval(agoInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.autoRefreshInterval]);
+  }, [settings.autoRefreshInterval, stats.lastUpdated]);
 
   // Global search (debounced)
   useEffect(() => {
@@ -534,7 +549,7 @@ const Dashboard = () => {
                 Files: <span className="text-white font-medium">{stats.dataFilesCount}</span>
               </span>
               <span className="text-gray-400 text-sm">
-                Updated: <span className="text-white font-medium">{formatDate(stats.lastUpdated)}</span>
+                Updated: <span className="text-white font-medium">{timeAgo || formatDate(stats.lastUpdated)}</span>
               </span>
               <span className="text-gray-400 text-xs ml-auto hidden sm:inline">
                 Auto-refresh: {Number(settings.autoRefreshInterval) > 0

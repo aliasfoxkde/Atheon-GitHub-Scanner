@@ -51,7 +51,8 @@ test.describe('API Integration Tests', () => {
     await page.route('**/embedded-data.json', route => route.abort());
 
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    // Don't use networkidle — the blocked request would hang indefinitely
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
 
     // App should still load (with fallback data)
