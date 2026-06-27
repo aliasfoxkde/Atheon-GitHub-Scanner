@@ -33,7 +33,8 @@ Conducted full source code audit. Fixed:
 - robots.txt, browserconfig.xml
 - TypeScript config (tsconfig.json, vite-plugin-checker)
 - 39 unit tests passing
-- Lighthouse audit script
+- Lighthouse CI GitHub Action + budget config
+- sitemap.xml for all 7 routes
 
 ### Features (this session)
 - CompareModal, Skeleton loaders, keyboard shortcuts

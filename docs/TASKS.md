@@ -25,5 +25,4 @@
 
 ## Pending (Future Work)
 - [ ] PWA push notifications / background sync
-- [ ] Run Lighthouse CI in CI/CD pipeline
-- [ ] Add sitemap.xml generation
+- [ ] sitemap.xml auto-generation (currently static, regenerate on deploy)
