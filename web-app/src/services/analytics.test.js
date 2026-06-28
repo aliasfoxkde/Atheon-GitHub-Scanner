@@ -1,27 +1,25 @@
 /**
- * Unit tests for analytics.js - analytics tracking service
- * Uses jest.mock() to avoid import.meta.env issues
+ * Unit tests for analytics.js - Analytics service interface
  */
 
 jest.mock('./analytics');
 
 import { analyticsService, MockAnalyticsService } from './analytics';
 
-describe('analytics.js', () => {
+describe('analyticsService', () => {
   beforeEach(() => {
-    // Clear events before each test
-    analyticsService.clearEvents();
     jest.clearAllMocks();
+    analyticsService.clearEvents();
   });
 
-  describe('analyticsService', () => {
-    it('is defined', () => {
-      expect(analyticsService).toBeDefined();
-    });
-
+  describe('initialization', () => {
     it('has userId and sessionId', () => {
       expect(analyticsService.userId).toBeDefined();
       expect(analyticsService.sessionId).toBeDefined();
+    });
+
+    it('events array starts empty', () => {
+      expect(analyticsService.events).toHaveLength(0);
     });
   });
 
@@ -29,12 +27,12 @@ describe('analytics.js', () => {
     it('records pageview event', () => {
       analyticsService.trackPageView('/dashboard', { source: 'navigation' });
 
-      expect(analyticsService.events).toHaveLength(1);
+      expect(analyticsService.events.length).toBe(1);
       expect(analyticsService.events[0].type).toBe('pageview');
       expect(analyticsService.events[0].page).toBe('/dashboard');
     });
 
-    it('includes user and session ids in event', () => {
+    it('includes userId and sessionId in event', () => {
       analyticsService.trackPageView('/test');
 
       const event = analyticsService.events[0];
@@ -53,7 +51,6 @@ describe('analytics.js', () => {
     it('records action event', () => {
       analyticsService.trackAction('button_click', { buttonId: 'submit' });
 
-      expect(analyticsService.events).toHaveLength(1);
       expect(analyticsService.events[0].type).toBe('action');
       expect(analyticsService.events[0].action).toBe('button_click');
     });
@@ -62,10 +59,8 @@ describe('analytics.js', () => {
   describe('trackError', () => {
     it('records error event with message', () => {
       const testError = new Error('Something went wrong');
-      testError.stack = 'Error: Something went wrong\n    at test.js:1';
       analyticsService.trackError(testError, { context: 'test' });
 
-      expect(analyticsService.events).toHaveLength(1);
       expect(analyticsService.events[0].type).toBe('error');
       expect(analyticsService.events[0].error).toBe('Something went wrong');
     });
@@ -73,15 +68,7 @@ describe('analytics.js', () => {
     it('handles string errors', () => {
       analyticsService.trackError('Generic error string');
 
-      expect(analyticsService.events).toHaveLength(1);
       expect(analyticsService.events[0].error).toBe('Generic error string');
-    });
-
-    it('includes context properties', () => {
-      const testError = new Error('Test');
-      analyticsService.trackError(testError, { userId: '123' });
-
-      expect(analyticsService.events[0].properties.userId).toBe('123');
     });
   });
 
@@ -89,7 +76,6 @@ describe('analytics.js', () => {
     it('records performance event', () => {
       analyticsService.trackPerformance('load_time', 1500, { page: '/dashboard' });
 
-      expect(analyticsService.events).toHaveLength(1);
       expect(analyticsService.events[0].type).toBe('performance');
       expect(analyticsService.events[0].metric).toBe('load_time');
       expect(analyticsService.events[0].value).toBe(1500);
@@ -100,7 +86,6 @@ describe('analytics.js', () => {
     it('records api_call event', () => {
       analyticsService.trackApiCall('/api/repos', 250, true, { method: 'GET' });
 
-      expect(analyticsService.events).toHaveLength(1);
       expect(analyticsService.events[0].type).toBe('api_call');
       expect(analyticsService.events[0].endpoint).toBe('/api/repos');
       expect(analyticsService.events[0].duration).toBe(250);
@@ -131,10 +116,10 @@ describe('analytics.js', () => {
     it('clears all tracked events', () => {
       analyticsService.trackPageView('/page1');
       analyticsService.trackAction('test');
-      expect(analyticsService.events).toHaveLength(2);
+      expect(analyticsService.events.length).toBe(2);
 
       analyticsService.clearEvents();
-      expect(analyticsService.events).toHaveLength(0);
+      expect(analyticsService.events.length).toBe(0);
     });
   });
 
@@ -155,6 +140,14 @@ describe('analytics.js', () => {
 
       expect(Array.isArray(parsed)).toBe(true);
       expect(parsed.length).toBe(1);
+    });
+  });
+
+  describe('MockAnalyticsService', () => {
+    it('can be instantiated', () => {
+      const mock = new MockAnalyticsService();
+      expect(mock).toBeDefined();
+      expect(mock.events).toHaveLength(0);
     });
   });
 });

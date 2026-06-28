@@ -1,235 +1,103 @@
-// Mock for realScannerData.js
-// Avoids actual fetch calls in tests
-// Uses jest.fn() to enable .mockResolvedValueOnce() etc.
+/**
+ * Mock realScannerData service for testing
+ */
 
-const mockScannerData = {
-  total_repositories: 500,
-  total_packages: 500,
-  average_quality_score: 78.5,
-  total_scans: 500,
-  security_stats: {
-    total_findings: 42,
-    critical: 5,
-    high: 12,
-    medium: 15,
-    low: 10,
-  },
-  security_pattern_distribution: {
-    'Dependency vulnerabilities': 8,
-    'SQL injection': 2,
-    'Code injection': 3,
-    XSS: 5,
-    Crypto: 4,
-    Secrets: 6,
-    Config: 4,
-  },
-  tier_distribution: { A: 200, B: 150, C: 100, D: 40, F: 10 },
-  language_distribution: {
-    JavaScript: 150,
-    Python: 120,
-    TypeScript: 80,
-    Java: 50,
-    Go: 40,
-    Rust: 30,
-    'C++': 20,
-    Ruby: 10,
-  },
+const mockData = {
+  total_repositories: 2209,
+  total_packages: 2209,
+  average_quality_score: 99.6,
+  total_scans: 2209,
+  tier_distribution: { A: 2100, B: 80, C: 20, D: 7, F: 2 },
+  language_distribution: { JavaScript: 100, Python: 50, TypeScript: 30 },
   top_languages: [
-    { language: 'JavaScript', count: 150, avgScore: 80.2 },
-    { language: 'Python', count: 120, avgScore: 78.5 },
-    { language: 'TypeScript', count: 80, avgScore: 82.1 },
-    { language: 'Java', count: 50, avgScore: 75.0 },
-    { language: 'Go', count: 40, avgScore: 79.3 },
-    { language: 'Rust', count: 30, avgScore: 85.0 },
-    { language: 'C++', count: 20, avgScore: 72.0 },
-    { language: 'Ruby', count: 10, avgScore: 70.0 },
+    { language: 'JavaScript', count: 100, avgScore: 95 },
+    { language: 'Python', count: 50, avgScore: 88 },
+    { language: 'TypeScript', count: 30, avgScore: 92 },
   ],
   recent_scans: [
-    {
-      id: 'repo-1',
-      name: 'facebook/react',
-      repo_name: 'facebook/react',
-      language: 'JavaScript',
-      stars: 225000,
-      quality_score: 92,
-      tier: 'A',
-      scan_date: '2026-06-25T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 4,
-      total_files: 15000,
-      forks: 45000,
-      description: 'React library',
-      topics: ['react', 'ui', 'javascript'],
-    },
-    {
-      id: 'repo-2',
-      name: 'microsoft/vscode',
-      repo_name: 'microsoft/vscode',
-      language: 'TypeScript',
-      stars: 155000,
-      quality_score: 88,
-      tier: 'A',
-      scan_date: '2026-06-24T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 80,
-      total_files: 90000,
-      forks: 28000,
-      description: 'Visual Studio Code',
-      topics: ['editor', 'typescript', 'electron'],
-    },
-    {
-      id: 'repo-3',
-      name: 'django/django',
-      repo_name: 'django/django',
-      language: 'Python',
-      stars: 78000,
-      quality_score: 85,
-      tier: 'A',
-      scan_date: '2026-06-23T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 45,
-      total_files: 25000,
-      forks: 35000,
-      description: 'Django framework',
-      topics: ['django', 'python', 'web'],
-    },
-    {
-      id: 'repo-4',
-      name: 'golang/go',
-      repo_name: 'golang/go',
-      language: 'Go',
-      stars: 115000,
-      quality_score: 90,
-      tier: 'A',
-      scan_date: '2026-06-22T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 12,
-      total_files: 20000,
-      forks: 17000,
-      description: 'Go language',
-      topics: ['go', 'language', 'concurrency'],
-    },
-    {
-      id: 'repo-5',
-      name: 'rust-lang/rust',
-      repo_name: 'rust-lang/rust',
-      language: 'Rust',
-      stars: 95000,
-      quality_score: 95,
-      tier: 'A',
-      scan_date: '2026-06-21T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 8,
-      total_files: 18000,
-      forks: 13000,
-      description: 'Rust language',
-      topics: ['rust', 'language', 'systems'],
-    },
-    {
-      id: 'repo-6',
-      name: 'axios/axios',
-      repo_name: 'axios/axios',
-      language: 'JavaScript',
-      stars: 103000,
-      quality_score: 82,
-      tier: 'A',
-      scan_date: '2026-06-20T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 3,
-      total_files: 2000,
-      forks: 9500,
-      description: 'HTTP client',
-      topics: ['http', 'ajax', 'javascript'],
-    },
-    {
-      id: 'repo-7',
-      name: 'nodejs/node',
-      repo_name: 'nodejs/node',
-      language: 'JavaScript',
-      stars: 98000,
-      quality_score: 84,
-      tier: 'A',
-      scan_date: '2026-06-19T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 1,
-      total_files: 5000,
-      forks: 26000,
-      description: 'Node.js runtime',
-      topics: ['nodejs', 'javascript', 'runtime'],
-    },
-    {
-      id: 'repo-8',
-      name: 'expressjs/express',
-      repo_name: 'expressjs/express',
-      language: 'JavaScript',
-      stars: 64000,
-      quality_score: 78,
-      tier: 'B',
-      scan_date: '2026-06-18T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 2,
-      total_files: 1500,
-      forks: 14000,
-      description: 'Web framework',
-      topics: ['express', 'nodejs', 'web'],
-    },
-    {
-      id: 'repo-9',
-      name: 'kubernetes/kubernetes',
-      repo_name: 'kubernetes/kubernetes',
-      language: 'Go',
-      stars: 110000,
-      quality_score: 87,
-      tier: 'A',
-      scan_date: '2026-06-17T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 95,
-      total_files: 80000,
-      forks: 38000,
-      description: 'Container orchestration',
-      topics: ['kubernetes', 'containers', 'devops'],
-    },
-    {
-      id: 'repo-10',
-      name: 'lodash/lodash',
-      repo_name: 'lodash/lodash',
-      language: 'JavaScript',
-      stars: 60000,
-      quality_score: 91,
-      tier: 'A',
-      scan_date: '2026-06-16T10:00:00Z',
-      scan_method: 'automated',
-      total_dependencies: 0,
-      total_files: 4000,
-      forks: 8200,
-      description: 'Utility library',
-      topics: ['lodash', 'javascript', 'utility'],
-    },
+    { id: '1', name: 'test-repo', language: 'JavaScript', quality_score: 95 },
+    { id: '2', name: 'python-repo', language: 'Python', quality_score: 88 },
+    { id: '3', name: 'ts-repo', language: 'TypeScript', quality_score: 92 },
   ],
-  quality_stats: { average: 78.5, median: 82, std_dev: 8.5, min: 45, max: 99 },
-  data_source: 'embedded_mock_data',
-  data_files_count: 3,
-  last_updated: '2026-06-26T12:00:00Z',
+  security_stats: { total_findings: 9, critical: 2, high: 7 },
+  data_source: 'MOCK',
+  data_files_count: 5,
+  last_updated: new Date().toISOString(),
 };
 
-// Create jest mock functions so tests can use .mockResolvedValueOnce()
-export const loadRealScannerData = jest.fn().mockResolvedValue(mockScannerData);
-export const getAllRepositories = jest.fn().mockResolvedValue({
-  repositories: mockScannerData.recent_scans,
-  total: mockScannerData.recent_scans.length,
-  page: 1,
-  limit: 10,
-  pages: 1,
+export const loadRealScannerData = async () => mockData;
+
+export const getAllRepositories = async (
+  page = 1,
+  limit = 50,
+  language = null,
+  tier = null,
+  signal,
+  search = '',
+  minScore = ''
+) => {
+  let repos = [...mockData.recent_scans];
+
+  if (language) repos = repos.filter((r) => r.language === language);
+  if (tier) repos = repos.filter((r) => r.tier === tier);
+  if (search) {
+    const q = search.toLowerCase();
+    repos = repos.filter(
+      (r) => r.name.toLowerCase().includes(q) || r.language.toLowerCase().includes(q)
+    );
+  }
+  if (minScore) {
+    const min = Number(minScore);
+    if (!Number.isNaN(min)) repos = repos.filter((r) => (r.quality_score || 0) >= min);
+  }
+
+  const total = repos.length;
+  const pages = Math.ceil(total / limit);
+  const start = (page - 1) * limit;
+
+  return { repositories: repos.slice(start, start + limit), total, page, limit, pages };
+};
+
+export const getEcosystemData = async () => {
+  const ecosystem_comparison = {};
+  const langScores = {};
+  for (const entry of mockData.top_languages) {
+    if (entry.language) langScores[entry.language] = entry.avgScore;
+  }
+  for (const [lang, count] of Object.entries(mockData.language_distribution)) {
+    ecosystem_comparison[lang] = {
+      repository_count: count,
+      average_quality_score: langScores[lang] ?? 90,
+    };
+  }
+  return { ecosystem_comparison, total_ecosystems: Object.keys(ecosystem_comparison).length };
+};
+
+export const getLanguageData = async () => ({
+  languages: mockData.language_distribution,
+  top_languages: mockData.top_languages,
 });
-export const checkApiHealth = jest.fn().mockResolvedValue({
+
+export const getPatternData = async () => ({
+  dependency_analysis: { total: 100 },
+  file_analysis: { total: 500 },
+  quality_analysis: { average: 90 },
+});
+
+export const checkApiHealth = async () => ({
   status: 'healthy',
   timestamp: new Date().toISOString(),
-  data_files_found: 3,
-  total_records: 500,
+  data_files_found: mockData.data_files_count,
+  total_records: mockData.total_repositories,
   data_source: 'embedded_mock_data',
 });
-export const getApiConfig = jest.fn().mockReturnValue({
-  baseUrl: 'http://localhost:8000',
+
+export const refreshDataCache = async () => mockData;
+
+export const isApiAvailable = async () => true;
+
+export const getApiConfig = () => ({
+  baseUrl: 'https://atheon-scanner-api.workers.dev',
   embeddedUrl: '/embedded-data.json',
   endpoints: {
     stats: '/api/stats',
@@ -237,34 +105,3 @@ export const getApiConfig = jest.fn().mockReturnValue({
     embedded: '/embedded-data.json',
   },
 });
-export const getEcosystemData = jest.fn().mockResolvedValue({
-  ecosystem_comparison: {},
-  total_ecosystems: 0,
-});
-export const getLanguageData = jest.fn().mockResolvedValue({
-  languages: mockScannerData.language_distribution,
-  top_languages: mockScannerData.top_languages,
-});
-export const getPatternData = jest.fn().mockResolvedValue({
-  dependency_analysis: {},
-  file_analysis: {},
-  quality_analysis: {},
-});
-export const refreshDataCache = jest.fn().mockResolvedValue(mockScannerData);
-export const isApiAvailable = jest.fn().mockResolvedValue(true);
-
-// Export mock data for direct access in tests
-export { mockScannerData };
-
-export default {
-  loadRealScannerData,
-  getAllRepositories,
-  checkApiHealth,
-  getApiConfig,
-  getEcosystemData,
-  getLanguageData,
-  getPatternData,
-  refreshDataCache,
-  isApiAvailable,
-  mockScannerData,
-};

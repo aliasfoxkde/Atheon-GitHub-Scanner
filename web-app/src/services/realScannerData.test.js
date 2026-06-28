@@ -1,139 +1,143 @@
 /**
- * Unit tests for realScannerData.js - data loading with Map cache
- * Uses jest.mock() to avoid import.meta.env issues
+ * Unit tests for realScannerData.js - Real scanner data service interface
  */
 
 jest.mock('./realScannerData');
 
-import {
-  loadRealScannerData,
-  getAllRepositories,
-  getEcosystemData,
-  getLanguageData,
-  getPatternData,
-  checkApiHealth,
-  getApiConfig,
-  refreshDataCache,
-  isApiAvailable,
-  mockScannerData,
-} from './realScannerData';
+import * as rsd from './realScannerData';
 
-describe('realScannerData.js', () => {
+describe('realScannerData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('loadRealScannerData', () => {
-    it('returns scanner data', async () => {
-      const data = await loadRealScannerData();
-      expect(data).toBeDefined();
-      expect(data.total_repositories).toBe(500);
-    });
-
-    it('returns mockScannerData with expected structure', async () => {
-      const data = await loadRealScannerData();
-      expect(data).toHaveProperty('recent_scans');
-      expect(data).toHaveProperty('language_distribution');
-      expect(data).toHaveProperty('tier_distribution');
+    it('loads scanner data', async () => {
+      const data = await rsd.loadRealScannerData();
+      expect(data.total_repositories).toBe(2209);
     });
   });
 
   describe('getAllRepositories', () => {
     it('returns paginated repositories', async () => {
-      const result = await getAllRepositories(1, 10);
+      const result = await rsd.getAllRepositories(1, 10);
 
       expect(result.repositories).toBeDefined();
       expect(result.total).toBeDefined();
-      expect(result.page).toBeDefined();
-      expect(result.limit).toBeDefined();
       expect(result.pages).toBeDefined();
     });
 
-    it('returns repositories array', async () => {
-      const result = await getAllRepositories();
-      expect(Array.isArray(result.repositories)).toBe(true);
+    it('filters by language', async () => {
+      const result = await rsd.getAllRepositories(1, 50, 'JavaScript');
+
+      expect(result.repositories.every((r) => r.language === 'JavaScript')).toBe(true);
+    });
+
+    it('filters by tier', async () => {
+      const result = await rsd.getAllRepositories(1, 50, null, 'A');
+
+      expect(result.repositories).toHaveLength(0);
+    });
+
+    it('filters by search query', async () => {
+      const result = await rsd.getAllRepositories(1, 50, null, null, null, 'test');
+
+      expect(result.repositories.length).toBeGreaterThan(0);
+    });
+
+    it('filters by minimum score', async () => {
+      const result = await rsd.getAllRepositories(1, 50, null, null, null, '', '90');
+
+      expect(result.repositories.every((r) => r.quality_score >= 90)).toBe(true);
+    });
+
+    it('uses default pagination', async () => {
+      const result = await rsd.getAllRepositories();
+
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(50);
     });
   });
 
   describe('getEcosystemData', () => {
-    it('returns ecosystem comparison data', async () => {
-      const result = await getEcosystemData();
+    it('returns ecosystem comparison', async () => {
+      const result = await rsd.getEcosystemData();
 
-      expect(result).toHaveProperty('ecosystem_comparison');
-      expect(result).toHaveProperty('total_ecosystems');
+      expect(result.ecosystem_comparison).toBeDefined();
+      expect(result.total_ecosystems).toBeGreaterThan(0);
+    });
+
+    it('includes repository counts', async () => {
+      const result = await rsd.getEcosystemData();
+
+      expect(result.ecosystem_comparison.JavaScript.repository_count).toBe(100);
     });
   });
 
   describe('getLanguageData', () => {
-    it('returns language distribution and top languages', async () => {
-      const result = await getLanguageData();
+    it('returns language distribution', async () => {
+      const result = await rsd.getLanguageData();
 
-      expect(result).toHaveProperty('languages');
-      expect(result).toHaveProperty('top_languages');
-      expect(Array.isArray(result.top_languages)).toBe(true);
+      expect(result.languages).toEqual({ JavaScript: 100, Python: 50, TypeScript: 30 });
+    });
+
+    it('returns top languages', async () => {
+      const result = await rsd.getLanguageData();
+
+      expect(result.top_languages).toHaveLength(3);
     });
   });
 
   describe('getPatternData', () => {
     it('returns pattern analysis data', async () => {
-      const result = await getPatternData();
+      const result = await rsd.getPatternData();
 
-      expect(result).toHaveProperty('dependency_analysis');
-      expect(result).toHaveProperty('file_analysis');
-      expect(result).toHaveProperty('quality_analysis');
+      expect(result.dependency_analysis).toBeDefined();
+      expect(result.file_analysis).toBeDefined();
+      expect(result.quality_analysis).toBeDefined();
     });
   });
 
   describe('checkApiHealth', () => {
-    it('returns health status', async () => {
-      const result = await checkApiHealth();
-
-      expect(result).toHaveProperty('status');
-      expect(result).toHaveProperty('timestamp');
-      expect(result).toHaveProperty('data_files_found');
-    });
-
     it('returns healthy status', async () => {
-      const result = await checkApiHealth();
+      const result = await rsd.checkApiHealth();
+
       expect(result.status).toBe('healthy');
+      expect(result.data_files_found).toBe(5);
+      expect(result.total_records).toBe(2209);
     });
-  });
 
-  describe('getApiConfig', () => {
-    it('returns API configuration', () => {
-      const config = getApiConfig();
+    it('includes timestamp', async () => {
+      const result = await rsd.checkApiHealth();
 
-      expect(config).toHaveProperty('baseUrl');
-      expect(config).toHaveProperty('embeddedUrl');
-      expect(config).toHaveProperty('endpoints');
-      expect(config.endpoints).toHaveProperty('embedded');
+      expect(result.timestamp).toBeDefined();
     });
   });
 
   describe('refreshDataCache', () => {
-    it('returns scanner data', async () => {
-      const data = await refreshDataCache();
+    it('reloads data', async () => {
+      const data = await rsd.refreshDataCache();
+
       expect(data).toBeDefined();
+      expect(data.total_repositories).toBe(2209);
     });
   });
 
   describe('isApiAvailable', () => {
-    it('returns boolean', async () => {
-      const available = await isApiAvailable();
-      expect(typeof available).toBe('boolean');
+    it('returns true', async () => {
+      const result = await rsd.isApiAvailable();
+
+      expect(result).toBe(true);
     });
   });
 
-  describe('mockScannerData', () => {
-    it('has expected properties for testing', () => {
-      expect(mockScannerData.total_repositories).toBe(500);
-      expect(mockScannerData.recent_scans.length).toBeGreaterThan(0);
-      expect(mockScannerData.top_languages.length).toBeGreaterThan(0);
-    });
+  describe('getApiConfig', () => {
+    it('returns API configuration', async () => {
+      const config = rsd.getApiConfig();
 
-    it('has valid tier distribution', () => {
-      expect(mockScannerData.tier_distribution).toHaveProperty('A');
-      expect(mockScannerData.tier_distribution).toHaveProperty('B');
+      expect(config.baseUrl).toBeDefined();
+      expect(config.embeddedUrl).toBeDefined();
+      expect(config.endpoints).toBeDefined();
     });
   });
 });
