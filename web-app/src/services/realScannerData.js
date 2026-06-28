@@ -1,9 +1,9 @@
 // Service to load REAL scanner data
 // Uses embedded data as primary source (always available in deployment)
 
-const WORKER_API_URL =
-  import.meta.env.VITE_WORKER_API_URL || 'https://atheon-scanner-api.workers.dev';
-const EMBEDDED_DATA_URL = import.meta.env.VITE_EMBEDDED_DATA_URL || '/embedded-data.json';
+const getWorkerApiUrl = () =>
+  process.env.VITE_WORKER_API_URL ?? 'https://atheon-scanner-api.workers.dev';
+const getEmbeddedDataUrl = () => process.env.VITE_EMBEDDED_DATA_URL ?? '/embedded-data.json';
 
 // Polyfill for AbortSignal.any (not supported in Safari, older Edge)
 function abortSignalAny(signals) {
@@ -63,7 +63,7 @@ async function fetchWithCache(url, ttlMs, signal) {
  */
 export const loadRealScannerData = async (signal) => {
   try {
-    const data = await fetchWithCache(EMBEDDED_DATA_URL, CACHE_TTL_MS, signal);
+    const data = await fetchWithCache(getEmbeddedDataUrl(), CACHE_TTL_MS, signal);
     return data;
   } catch (error) {
     if (error.name === 'AbortError') throw error;
@@ -186,7 +186,7 @@ export const checkApiHealth = async (signal) => {
   const timer = setTimeout(() => controller.abort(), 10_000);
   const combinedSignal = signal ? abortSignalAny([controller.signal, signal]) : controller.signal;
   try {
-    const response = await fetch(EMBEDDED_DATA_URL, { signal: combinedSignal });
+    const response = await fetch(getEmbeddedDataUrl(), { signal: combinedSignal });
     clearTimeout(timer);
     if (response.ok) {
       const data = await response.json();
@@ -225,7 +225,10 @@ export const isApiAvailable = async () => {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(EMBEDDED_DATA_URL, { method: 'HEAD', signal: controller.signal });
+    const response = await fetch(getEmbeddedDataUrl(), {
+      method: 'HEAD',
+      signal: controller.signal,
+    });
     clearTimeout(timer);
     return response.ok;
   } catch {
@@ -238,12 +241,12 @@ export const isApiAvailable = async () => {
  */
 export const getApiConfig = () => {
   return {
-    baseUrl: WORKER_API_URL,
-    embeddedUrl: EMBEDDED_DATA_URL,
+    baseUrl: getWorkerApiUrl(),
+    embeddedUrl: getEmbeddedDataUrl(),
     endpoints: {
       stats: '/api/stats',
       repositories: '/api/repositories',
-      embedded: EMBEDDED_DATA_URL,
+      embedded: getEmbeddedDataUrl(),
     },
   };
 };

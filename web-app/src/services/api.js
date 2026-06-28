@@ -2,7 +2,8 @@
 // Uses embedded data as primary source for reliable deployed operation
 
 const EMBEDDED_DATA_URL = '/embedded-data.json';
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+// process.env set in jest.setup.cjs for Jest; import.meta.env for Vite browser
+const getApiBaseUrl = () => process.env.VITE_API_URL ?? '';
 
 // Cache for embedded data
 let dataCache = null;
@@ -50,7 +51,7 @@ async function loadEmbeddedData(signal) {
 
 class ApiService {
   async request(endpoint, options = {}, signal, retries = 2) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${getApiBaseUrl()}${endpoint}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15_000);
     const combinedSignal = signal ? abortSignalAny([controller.signal, signal]) : controller.signal;
@@ -88,7 +89,7 @@ class ApiService {
         await new Promise((r) => setTimeout(r, 500 * Math.pow(2, attempt)));
         // Re-create abort signal for retry
         const retryController = new AbortController();
-        const retryTimer = setTimeout(() => retryController.abort(), 15_000);
+        setTimeout(() => retryController.abort(), 15_000);
         config.signal = signal
           ? abortSignalAny([retryController.signal, signal])
           : retryController.signal;

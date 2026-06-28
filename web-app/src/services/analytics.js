@@ -2,7 +2,7 @@
 class AnalyticsService {
   constructor() {
     this.events = [];
-    this.enabled = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
+    this.enabled = process.env.VITE_ENABLE_ANALYTICS === 'true';
     this.userId = this.getUserId();
     this.sessionId = this.getSessionId();
   }
@@ -46,8 +46,8 @@ class AnalyticsService {
         ...properties,
         userAgent: navigator.userAgent,
         screenResolution: `${window.screen.width}x${window.screen.height}`,
-        language: navigator.language
-      }
+        language: navigator.language,
+      },
     };
 
     this.events.push(event);
@@ -67,8 +67,8 @@ class AnalyticsService {
       properties: {
         ...properties,
         page: window.location.pathname,
-        referrer: document.referrer
-      }
+        referrer: document.referrer,
+      },
     };
 
     this.events.push(event);
@@ -88,8 +88,8 @@ class AnalyticsService {
       properties: {
         ...context,
         stack: error.stack,
-        page: window.location.pathname
-      }
+        page: window.location.pathname,
+      },
     };
 
     this.events.push(event);
@@ -107,7 +107,7 @@ class AnalyticsService {
       timestamp: new Date().toISOString(),
       userId: this.userId,
       sessionId: this.sessionId,
-      properties
+      properties,
     };
 
     this.events.push(event);
@@ -128,8 +128,8 @@ class AnalyticsService {
       sessionId: this.sessionId,
       properties: {
         ...properties,
-        method: properties.method || 'GET'
-      }
+        method: properties.method || 'GET',
+      },
     };
 
     this.events.push(event);
@@ -147,7 +147,7 @@ class AnalyticsService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(event)
+        body: JSON.stringify(event),
       });
 
       if (!response.ok) {
@@ -199,7 +199,7 @@ class AnalyticsService {
       eventTypes: this.events.reduce((acc, event) => {
         acc[event.type] = (acc[event.type] || 0) + 1;
         return acc;
-      }, {})
+      }, {}),
     };
   }
 

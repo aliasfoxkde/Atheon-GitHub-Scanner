@@ -14,7 +14,7 @@ export default [
     },
     languageOptions: {
       parserOptions: { ecmaFeatures: { jsx: true }, sourceType: 'module' },
-      globals: { ...globals.browser, console: 'readonly' },
+      globals: { ...globals.browser, console: 'readonly', process: 'readonly' },
     },
     settings: { react: { version: 'detect' } },
     rules: {

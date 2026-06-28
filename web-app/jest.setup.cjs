@@ -32,7 +32,7 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
 };
 
-// Mock import.meta.env
+// Mock import.meta.env (legacy)
 global.importMetaEnvMock = {
   VITE_API_URL: 'http://localhost:8000',
   VITE_ENABLE_ANALYTICS: 'false',
@@ -44,17 +44,10 @@ global.importMetaEnvMock = {
   VITE_DATA_SOURCE: 'REAL_SCANNER_DATA'
 };
 
-// Mock import.meta for service modules
-Object.defineProperty(global, 'import.meta', {
-  value: {
-    env: {
-      VITE_API_URL: 'http://localhost:8000',
-      VITE_ENABLE_ANALYTICS: 'false',
-      VITE_ENABLE_OFFLINE_SUPPORT: 'false',
-      VITE_ENABLE_MOCK_DATA: 'false',
-      VITE_WORKER_API_URL: 'https://atheon-scanner-api.workers.dev',
-      VITE_EMBEDDED_DATA_URL: '/embedded-data.json',
-    }
-  },
-  writable: true,
-});
+// Set process.env for service modules (services now use process.env directly)
+process.env.VITE_API_URL = 'http://localhost:8000';
+process.env.VITE_ENABLE_ANALYTICS = 'false';
+process.env.VITE_ENABLE_OFFLINE_SUPPORT = 'false';
+process.env.VITE_ENABLE_MOCK_DATA = 'false';
+process.env.VITE_WORKER_API_URL = 'https://atheon-scanner-api.workers.dev';
+process.env.VITE_EMBEDDED_DATA_URL = '/embedded-data.json';
