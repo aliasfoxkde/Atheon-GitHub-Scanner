@@ -5,6 +5,10 @@ jest.mock('./api');
 import { apiService } from './api';
 
 describe('api.js service', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('abortSignalAny polyfill', () => {
     it('apiService.request accepts a signal parameter', async () => {
       const controller = new AbortController();
@@ -26,6 +30,11 @@ describe('api.js service', () => {
       // Aborting one should abort the combined
       controller1.abort();
       expect(combined.aborted).toBe(true);
+    });
+
+    it('abortSignalAny handles null signals', () => {
+      const combined = apiService.abortSignalAny([null, undefined]);
+      expect(combined).toBeDefined();
     });
   });
 
@@ -86,6 +95,16 @@ describe('api.js service', () => {
         expect(result.data).toHaveProperty('ecosystem_comparison');
       }
     });
+
+    it('getTrending returns trending data', async () => {
+      const result = await apiService.getTrending();
+      expect(result).toHaveProperty('success');
+    });
+
+    it('getPatterns returns pattern analysis data', async () => {
+      const result = await apiService.getCategories();
+      expect(result).toHaveProperty('success');
+    });
   });
 
   describe('searchPackages', () => {
@@ -109,6 +128,18 @@ describe('api.js service', () => {
         expect(result.data).toHaveProperty('query', 'react');
       }
     });
+
+    it('respects limit parameter', async () => {
+      const result = await apiService.searchPackages('repo', 1);
+      expect(result.success).toBe(true);
+      expect(result.data.results.length).toBeLessThanOrEqual(1);
+    });
+
+    it('returns total count in response', async () => {
+      const result = await apiService.searchPackages('repo');
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveProperty('total');
+    });
   });
 
   describe('getCompareReports', () => {
@@ -122,6 +153,119 @@ describe('api.js service', () => {
       const result = await apiService.getCompareReports(null);
       expect(result.success).toBe(true);
       expect(result.data.reports).toEqual([]);
+    });
+
+    it('returns matching reports for valid ids', async () => {
+      const result = await apiService.getCompareReports([1, 2]);
+      expect(result.success).toBe(true);
+      expect(result.data.reports).toBeDefined();
+      expect(result.data).toHaveProperty('count');
+    });
+
+    it('returns reports with correct count', async () => {
+      const result = await apiService.getCompareReports([1]);
+      expect(result.success).toBe(true);
+      expect(result.data.count).toBe(result.data.reports.length);
+    });
+  });
+
+  describe('getReports with filters', () => {
+    it('returns reports without filters', async () => {
+      const result = await apiService.getReports();
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveProperty('reports');
+      expect(result.data).toHaveProperty('total');
+    });
+
+    it('returns reports with page filter', async () => {
+      const result = await apiService.getReports({ page: 2 });
+      expect(result.success).toBe(true);
+      expect(result.data.page).toBe(2);
+    });
+
+    it('returns reports with limit filter', async () => {
+      const result = await apiService.getReports({ limit: 10 });
+      expect(result.success).toBe(true);
+      expect(result.data.limit).toBe(10);
+    });
+
+    it('returns reports with language filter', async () => {
+      const result = await apiService.getReports({ language: 'JavaScript' });
+      expect(result.success).toBe(true);
+    });
+
+    it('returns reports with tier filter', async () => {
+      const result = await apiService.getReports({ tier: 'high' });
+      expect(result.success).toBe(true);
+    });
+
+    it('returns reports with q (query) filter', async () => {
+      const result = await apiService.getReports({ q: 'test' });
+      expect(result.success).toBe(true);
+    });
+
+    it('returns reports with minScore filter', async () => {
+      const result = await apiService.getReports({ minScore: 80 });
+      expect(result.success).toBe(true);
+    });
+
+    it('ignores null and undefined filter values', async () => {
+      const result = await apiService.getReports({ page: null, limit: undefined });
+      expect(result.success).toBe(true);
+    });
+
+    it('ignores empty string filter values', async () => {
+      const result = await apiService.getReports({ q: '' });
+      expect(result.success).toBe(true);
+    });
+
+    it('combines multiple filters', async () => {
+      const result = await apiService.getReports({ page: 1, limit: 10, language: 'JavaScript' });
+      expect(result.success).toBe(true);
+      expect(result.data.page).toBe(1);
+      expect(result.data.limit).toBe(10);
+    });
+
+    it('returns pagination metadata', async () => {
+      const result = await apiService.getReports({ page: 1, limit: 1 });
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveProperty('pages');
+      expect(result.data).toHaveProperty('perPage');
+    });
+  });
+
+  describe('getReportsByCategory', () => {
+    it('returns reports for a category', async () => {
+      const result = await apiService.getReportsByCategory('javascript');
+      expect(result).toHaveProperty('success');
+    });
+  });
+
+  describe('getReportsByLanguage', () => {
+    it('returns reports for a language', async () => {
+      const result = await apiService.getReportsByLanguage('javascript');
+      expect(result).toHaveProperty('success');
+    });
+  });
+
+  describe('searchRepositories', () => {
+    it('returns search results', async () => {
+      const result = await apiService.searchRepositories('test');
+      expect(result).toHaveProperty('success');
+    });
+  });
+
+  describe('getRateLimit', () => {
+    it('returns rate limit info', async () => {
+      const result = await apiService.getRateLimit();
+      expect(result).toHaveProperty('success');
+    });
+  });
+
+  describe('downloadReport', () => {
+    it('returns download result', async () => {
+      const result = await apiService.downloadReport('123', 'json');
+      expect(result).toHaveProperty('success');
     });
   });
 });
