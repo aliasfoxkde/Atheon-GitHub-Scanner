@@ -30,12 +30,17 @@ export default [
     },
   },
   {
-    files: ['**/*.test.{js,jsx}', '**/*.spec.{js,jsx}'],
+    files: ['**/*.test.{js,jsx}', '**/*.spec.{js,jsx}', '**/__mocks__/**/*.{js,jsx}'],
     plugins: { jest: {} },
     languageOptions: {
-      globals: { jest: 'readonly', expect: 'readonly', describe: 'readonly', it: 'readonly', beforeEach: 'readonly', afterEach: 'readonly', beforeAll: 'readonly', afterAll: 'readonly' },
+      globals: { jest: 'readonly', expect: 'readonly', describe: 'readonly', it: 'readonly', beforeEach: 'readonly', afterEach: 'readonly', beforeAll: 'readonly', afterAll: 'readonly', module: 'readonly' },
     },
-    rules: { 'no-unused-vars': 'off' },
+    rules: { 'no-unused-vars': 'off', 'no-undef': 'off' },
+  },
+  {
+    files: ['jest.config.cjs'],
+    languageOptions: { globals: { module: 'readonly', exports: 'readonly', require: 'readonly' } },
+    rules: { 'no-undef': 'off' },
   },
   prettier,
 ];
