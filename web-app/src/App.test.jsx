@@ -6,33 +6,90 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
-// Mock dependencies
-const MockAppLayout = ({ children }) => <div data-testid="app-layout">{children}</div>;
-MockAppLayout.displayName = 'AppLayout';
-
-const MockDashboard = () => <div data-testid="dashboard-page">Dashboard</div>;
-const MockSubmit = () => <div data-testid="submit-page">Submit</div>;
-const MockReports = () => <div data-testid="reports-page">Reports</div>;
-const MockApiDocs = () => <div data-testid="api-docs-page">API Docs</div>;
-const MockPipeline = () => <div data-testid="pipeline-page">Pipeline</div>;
-const MockTrending = () => <div data-testid="trending-page">Trending</div>;
-const MockSettings = () => <div data-testid="settings-page">Settings</div>;
-const MockReportDetail = () => <div data-testid="report-detail-page">Report Detail</div>;
-const MockAbout = () => <div data-testid="about-page">About</div>;
-const MockNotFound = () => <div data-testid="not-found-page">Not Found</div>;
-
-jest.mock('./components/Layout/AppLayout', () => MockAppLayout);
-jest.mock('./pages/Dashboard', () => MockDashboard);
-jest.mock('./pages/Submit', () => MockSubmit);
-jest.mock('./pages/Reports', () => MockReports);
-jest.mock('./pages/ApiDocs', () => MockApiDocs);
-jest.mock('./pages/Pipeline', () => MockPipeline);
-jest.mock('./pages/Trending', () => MockTrending);
-jest.mock('./pages/Settings', () => MockSettings);
-jest.mock('./pages/ReportDetail', () => MockReportDetail);
-jest.mock('./pages/About', () => MockAbout);
-jest.mock('./pages/NotFound', () => MockNotFound);
-jest.mock('./components/ErrorBoundary', ({ children }) => <div>{children}</div>);
+jest.mock(
+  './components/Layout/AppLayout',
+  () =>
+    function MockAppLayout({ children }) {
+      return <div data-testid="app-layout">{children}</div>;
+    }
+);
+jest.mock(
+  './pages/Dashboard',
+  () =>
+    function MockDashboard() {
+      return <div data-testid="dashboard-page">Dashboard</div>;
+    }
+);
+jest.mock(
+  './pages/Submit',
+  () =>
+    function MockSubmit() {
+      return <div data-testid="submit-page">Submit</div>;
+    }
+);
+jest.mock(
+  './pages/Reports',
+  () =>
+    function MockReports() {
+      return <div data-testid="reports-page">Reports</div>;
+    }
+);
+jest.mock(
+  './pages/ApiDocs',
+  () =>
+    function MockApiDocs() {
+      return <div data-testid="api-docs-page">API Docs</div>;
+    }
+);
+jest.mock(
+  './pages/Pipeline',
+  () =>
+    function MockPipeline() {
+      return <div data-testid="pipeline-page">Pipeline</div>;
+    }
+);
+jest.mock(
+  './pages/Trending',
+  () =>
+    function MockTrending() {
+      return <div data-testid="trending-page">Trending</div>;
+    }
+);
+jest.mock(
+  './pages/Settings',
+  () =>
+    function MockSettings() {
+      return <div data-testid="settings-page">Settings</div>;
+    }
+);
+jest.mock(
+  './pages/ReportDetail',
+  () =>
+    function MockReportDetail() {
+      return <div data-testid="report-detail-page">Report Detail</div>;
+    }
+);
+jest.mock(
+  './pages/About',
+  () =>
+    function MockAbout() {
+      return <div data-testid="about-page">About</div>;
+    }
+);
+jest.mock(
+  './pages/NotFound',
+  () =>
+    function MockNotFound() {
+      return <div data-testid="not-found-page">Not Found</div>;
+    }
+);
+jest.mock(
+  './components/ErrorBoundary',
+  () =>
+    function MockErrorBoundary({ children }) {
+      return <div>{children}</div>;
+    }
+);
 jest.mock('framer-motion', () => ({
   AnimatePresence: ({ children }) => <div>{children}</div>,
   motion: { div: 'div' },
